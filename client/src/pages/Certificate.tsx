@@ -3,13 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet";
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import { Printer, Download, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import StatusBadge from "@/components/shared/StatusBadge";
+import PrintableCertificate from "@/components/certificate/PrintableCertificate";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Certificate {
@@ -202,6 +203,9 @@ const Certificate = () => {
             </Button>
           </div>
         </div>
+
+        {/* Printable QR Certificate */}
+        <PrintableCertificate certificate={certificate} />
 
         <Card className="p-8 border border-gray-200 rounded-lg shadow-md">
           <div className="flex flex-col lg:flex-row gap-8">
