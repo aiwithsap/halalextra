@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -109,6 +110,73 @@ export const insertCertificateSchema = createInsertSchema(certificates).omit({ i
 export const insertInspectionSchema = createInsertSchema(inspections).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
+
+// Define relations
+export const usersRelations = relations(users, ({ many }) => ({
+  certificates: many(certificates),
+  inspections: many(inspections),
+  feedback: many(feedback),
+  auditLogs: many(auditLogs),
+}));
+
+export const storesRelations = relations(stores, ({ many }) => ({
+  applications: many(applications),
+  certificates: many(certificates),
+  feedback: many(feedback),
+}));
+
+export const applicationsRelations = relations(applications, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [applications.storeId],
+    references: [stores.id],
+  }),
+  certificates: many(certificates),
+  inspections: many(inspections),
+}));
+
+export const certificatesRelations = relations(certificates, ({ one }) => ({
+  store: one(stores, {
+    fields: [certificates.storeId],
+    references: [stores.id],
+  }),
+  application: one(applications, {
+    fields: [certificates.applicationId],
+    references: [applications.id],
+  }),
+  issuedByUser: one(users, {
+    fields: [certificates.issuedBy],
+    references: [users.id],
+  }),
+}));
+
+export const inspectionsRelations = relations(inspections, ({ one }) => ({
+  application: one(applications, {
+    fields: [inspections.applicationId],
+    references: [applications.id],
+  }),
+  inspector: one(users, {
+    fields: [inspections.inspectorId],
+    references: [users.id],
+  }),
+}));
+
+export const feedbackRelations = relations(feedback, ({ one }) => ({
+  store: one(stores, {
+    fields: [feedback.storeId],
+    references: [stores.id],
+  }),
+  moderator: one(users, {
+    fields: [feedback.moderatorId],
+    references: [users.id],
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+}));
 
 // Define types
 export type User = typeof users.$inferSelect;
