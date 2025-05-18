@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -10,110 +11,97 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="text-accent">
-                <i className="ri-verified-badge-fill text-2xl"></i>
+              <div className="text-primary">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
               </div>
               <div>
-                <h3 className="font-bold text-lg">{t('footer.title')}</h3>
+                <h3 className="font-bold text-lg">Halal Certification</h3>
               </div>
             </div>
             <p className="text-gray-400 mb-4">
-              {t('footer.tagline')}
+              Ensuring authenticity and compliance with Islamic dietary laws
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white">
-                <i className="ri-facebook-fill text-xl"></i>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <i className="ri-twitter-fill text-xl"></i>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <i className="ri-instagram-fill text-xl"></i>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <i className="ri-linkedin-fill text-xl"></i>
-              </a>
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                </svg>
+              </Button>
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                </svg>
+              </Button>
             </div>
           </div>
           
           <div>
-            <h3 className="font-bold text-lg mb-4">{t('footer.quickLinks')}</h3>
+            <h3 className="font-bold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/">
-                  <a className="text-gray-400 hover:text-white">{t('nav.home')}</a>
+                  <Button variant="link" className="text-gray-400 hover:text-white p-0">Home</Button>
                 </Link>
               </li>
               <li>
                 <Link href="/about">
-                  <a className="text-gray-400 hover:text-white">{t('nav.about')}</a>
+                  <Button variant="link" className="text-gray-400 hover:text-white p-0">About</Button>
                 </Link>
               </li>
               <li>
                 <Link href="/verify">
-                  <a className="text-gray-400 hover:text-white">{t('nav.verify')}</a>
+                  <Button variant="link" className="text-gray-400 hover:text-white p-0">Verify</Button>
                 </Link>
               </li>
               <li>
                 <Link href="/apply">
-                  <a className="text-gray-400 hover:text-white">{t('nav.apply')}</a>
+                  <Button variant="link" className="text-gray-400 hover:text-white p-0">Apply</Button>
                 </Link>
               </li>
               <li>
                 <Link href="/contact">
-                  <a className="text-gray-400 hover:text-white">{t('nav.contact')}</a>
+                  <Button variant="link" className="text-gray-400 hover:text-white p-0">Contact</Button>
                 </Link>
               </li>
             </ul>
           </div>
           
           <div>
-            <h3 className="font-bold text-lg mb-4">{t('footer.legal')}</h3>
+            <h3 className="font-bold text-lg mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/terms">
-                  <a className="text-gray-400 hover:text-white">{t('footer.terms')}</a>
+                  <Button variant="link" className="text-gray-400 hover:text-white p-0">Terms of Service</Button>
                 </Link>
               </li>
               <li>
                 <Link href="/privacy">
-                  <a className="text-gray-400 hover:text-white">{t('footer.privacy')}</a>
-                </Link>
-              </li>
-              <li>
-                <Link href="/cookies">
-                  <a className="text-gray-400 hover:text-white">{t('footer.cookies')}</a>
-                </Link>
-              </li>
-              <li>
-                <Link href="/data-retention">
-                  <a className="text-gray-400 hover:text-white">{t('footer.dataRetention')}</a>
+                  <Button variant="link" className="text-gray-400 hover:text-white p-0">Privacy Policy</Button>
                 </Link>
               </li>
             </ul>
           </div>
           
           <div>
-            <h3 className="font-bold text-lg mb-4">{t('footer.contactUs')}</h3>
+            <h3 className="font-bold text-lg mb-4">Contact Us</h3>
             <ul className="space-y-2">
-              <li className="flex items-start space-x-2">
-                <i className="ri-map-pin-line mt-1 text-gray-400"></i>
-                <span className="text-gray-400">{t('footer.address')}</span>
+              <li className="flex items-start">
+                <span className="text-gray-400">123 Certification Ave, Suite 101<br/>New York, NY 10001</span>
               </li>
-              <li className="flex items-center space-x-2">
-                <i className="ri-phone-line text-gray-400"></i>
-                <span className="text-gray-400">{t('footer.phone')}</span>
+              <li className="flex items-center">
+                <span className="text-gray-400">+1 (555) 123-4567</span>
               </li>
-              <li className="flex items-center space-x-2">
-                <i className="ri-mail-line text-gray-400"></i>
-                <span className="text-gray-400">{t('footer.email')}</span>
+              <li className="flex items-center">
+                <span className="text-gray-400">info@halalcert.org</span>
               </li>
             </ul>
           </div>
         </div>
         
         <div className="pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
+          <p>&copy; {new Date().getFullYear()} Halal Certification Authority. All rights reserved.</p>
         </div>
       </div>
     </footer>
