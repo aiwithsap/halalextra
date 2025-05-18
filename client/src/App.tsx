@@ -14,6 +14,7 @@ import Verify from "./pages/Verify";
 import Certificate from "./pages/Certificate";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Login from "./pages/Login";
 import InspectorDashboard from "./pages/inspector/Dashboard";
 import ApplicationDetail from "./pages/inspector/ApplicationDetail";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -24,7 +25,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-function Router() {
+function AppRouter() {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -36,7 +37,7 @@ function Router() {
         description: "You must be logged in to access this page",
         variant: "destructive"
       });
-      return <Redirect to="/" />;
+      return <Redirect to="/login" />;
     }
     
     if (roles && !roles.includes(user.role)) {
@@ -61,6 +62,7 @@ function Router() {
       <Route path="/certificate/:id" component={Certificate} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
+      <Route path="/login" component={Login} />
       
       {/* Admin Routes */}
       <Route path="/admin/dashboard">
@@ -89,16 +91,20 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen flex flex-col pattern-bg">
-          <Header />
-          <main className="flex-grow">
-            <Router />
-          </main>
-          <Footer />
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <div className="min-h-screen flex flex-col pattern-bg">
+              <Header />
+              <main className="flex-grow">
+                <AppRouter />
+              </main>
+              <Footer />
+            </div>
+            <Toaster />
+          </TooltipProvider>
+        </LanguageProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

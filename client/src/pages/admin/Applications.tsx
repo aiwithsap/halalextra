@@ -25,8 +25,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { ClipboardList, Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Application, Store } from "@shared/schema";
+
+// Type for application with store data
+interface ApplicationWithStore extends Application {
+  store: Store;
+}
 
 export default function Applications() {
   const { toast } = useToast();
