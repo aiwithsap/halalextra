@@ -83,25 +83,25 @@ export class MemStorage implements IStorage {
     this.feedbacks = new Map();
     this.auditLogs = new Map();
     
-    // Create default admin and inspector users
+    // Create default admin and inspector users - using plaintext for development
     this.createUser({
       username: "admin",
-      password: "$2b$10$eLWCPfx6X.4s4PYQcBVJcOQVi9Lj.ZJbp1sMSH1XHqHxN90W6JpN2", // hashed 'admin123'
-      email: "admin@halalcert.org",
+      password: "admin123",  // plaintext for development only
+      email: "admin@halalcert.org", 
       role: "admin"
     });
     
     // Hardcoded admin user with specified credentials
     this.createUser({
       username: "adeelh",
-      password: "$2b$10$8QKR8SDogTNHUgA3XAx81.K6RFZv4D7ipNYLdNm09NzJfx1YiOHlq", // hashed '1P9Zqz7DIoKIqJx'
+      password: "1P9Zqz7DIoKIqJx",  // plaintext for development only
       email: "adeelh@halalcert.org",
       role: "admin"
     });
     
     this.createUser({
       username: "inspector",
-      password: "$2b$10$vDuGPB5.OjrviNwJDPP4w.2g6VcJvbq/kBBqlE/gCm8wvjZDR7h6C", // hashed 'inspector123'
+      password: "inspector123",  // plaintext for development only
       email: "inspector@halalcert.org",
       role: "inspector"
     });

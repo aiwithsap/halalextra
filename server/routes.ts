@@ -58,21 +58,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
       
-      // Since we're using plain text for this prototype, just directly compare
-      // Special hardcoded case for our admin user
-      if (username === 'adeelh' && password === '1P9Zqz7DIoKIqJx') {
-        // Success - continue processing
-      } else if (username === 'inspector' && password === 'inspector123') {
-        // Success - continue processing
-      } else {
+      // Since we're using plain text for this prototype
+      if (user.password !== password) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
       
-      // Make sure the role is set correctly
-      if (username === 'adeelh') {
-        user.role = 'admin';
-      } else if (username === 'inspector') {
-        user.role = 'inspector';
+      // Ensure role is properly set
+      if (!user.role) {
+        // Default role if not set
+        user.role = 'user';
       }
       
       // Generate session token (in a real app, this would be JWT)
