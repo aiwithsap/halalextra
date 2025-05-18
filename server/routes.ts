@@ -58,19 +58,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
       
-      // In a real app, we would verify the password hash here
-      // For the prototype, we'll use hardcoded credentials
-      const validCredentials: Record<string, { password: string, role: string }> = {
-        'adeelh': { password: '1P9Zqz7DIoKIqJx', role: 'admin' },
-        'inspector': { password: 'inspector123', role: 'inspector' }
-      };
-      
-      if (!validCredentials[username] || validCredentials[username].password !== password) {
+      // Since we're using plain text for this prototype, just directly compare
+      // Special hardcoded case for our admin user
+      if (username === 'adeelh' && password === '1P9Zqz7DIoKIqJx') {
+        // Success - continue processing
+      } else if (username === 'inspector' && password === 'inspector123') {
+        // Success - continue processing
+      } else {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
       
-      // Set the correct role based on the username
-      user.role = validCredentials[username].role;
+      // Make sure the role is set correctly
+      if (username === 'adeelh') {
+        user.role = 'admin';
+      } else if (username === 'inspector') {
+        user.role = 'inspector';
+      }
       
       // Generate session token (in a real app, this would be JWT)
       const session = {
