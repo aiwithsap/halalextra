@@ -117,7 +117,7 @@ const MultiStepForm = () => {
         formDataObj.append('additionalDocuments', formData.additionalDocuments);
       }
       
-      // Submit application
+      // Submit application to our API which will now use PostgreSQL storage
       const response = await fetch('/api/applications', {
         method: 'POST',
         body: formDataObj,
@@ -125,14 +125,15 @@ const MultiStepForm = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error: ${response.status}`);
       }
       
       const result = await response.json();
       
       toast({
         title: t("apply.successTitle"),
-        description: t("apply.successMessage"),
+        description: t("apply.successMessage") + (result.applicationId ? ` (ID: ${result.applicationId})` : ''),
       });
       
       // Reset form and go back to step 1
@@ -165,9 +166,10 @@ const MultiStepForm = () => {
       
     } catch (error) {
       console.error("Error submitting application:", error);
+      const errorMessage = error instanceof Error ? error.message : t("apply.errorMessage");
       toast({
         title: t("apply.errorTitle"),
-        description: t("apply.errorMessage"),
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
