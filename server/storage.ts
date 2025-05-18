@@ -4,12 +4,12 @@ import {
   applications, type Application, type InsertApplication,
   certificates, type Certificate, type InsertCertificate,
   inspections, type Inspection, type InsertInspection,
-  feedback, type Feedback, type InsertFeedback,
+  feedback as feedbackTable, type Feedback, type InsertFeedback,
   auditLogs, type AuditLog, type InsertAuditLog
 } from "@shared/schema";
 import { generateCertificateNumber } from "./utils";
 import { db } from "./db";
-import { eq, and, or, desc, ilike } from "drizzle-orm";
+import { eq, and, or, desc, ilike, sql } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -538,18 +538,18 @@ export class DatabaseStorage implements IStorage {
 
   // Feedback operations
   async getFeedback(id: number): Promise<Feedback | undefined> {
-    const [feedback] = await db.select().from(feedback).where(eq(feedback.id, id));
-    return feedback || undefined;
+    const [feedbackItem] = await db.select().from(feedbackTable).where(eq(feedbackTable.id, id));
+    return feedbackItem || undefined;
   }
 
   async getFeedbackByStoreId(storeId: number): Promise<Feedback[]> {
     return await db
       .select()
-      .from(feedback)
+      .from(feedbackTable)
       .where(
         and(
-          eq(feedback.storeId, storeId),
-          eq(feedback.status, 'approved')
+          eq(feedbackTable.storeId, storeId),
+          eq(feedbackTable.status, 'approved')
         )
       );
   }
@@ -557,12 +557,12 @@ export class DatabaseStorage implements IStorage {
   async getPendingFeedback(): Promise<(Feedback & { store: Store })[]> {
     const pendingFeedback = await db
       .select({
-        feedbackItem: feedback,
+        feedbackItem: feedbackTable,
         store: stores
       })
-      .from(feedback)
-      .innerJoin(stores, eq(feedback.storeId, stores.id))
-      .where(eq(feedback.status, 'pending'));
+      .from(feedbackTable)
+      .innerJoin(stores, eq(feedbackTable.storeId, stores.id))
+      .where(eq(feedbackTable.status, 'pending'));
     
     return pendingFeedback.map(({ feedbackItem, store }) => ({
       ...feedbackItem,
@@ -572,7 +572,7 @@ export class DatabaseStorage implements IStorage {
 
   async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
     const [feedbackItem] = await db
-      .insert(feedback)
+      .insert(feedbackTable)
       .values(insertFeedback)
       .returning();
     return feedbackItem;
@@ -580,13 +580,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateFeedbackStatus(id: number, status: string, moderatorId: number): Promise<Feedback> {
     const [feedbackItem] = await db
-      .update(feedback)
+      .update(feedbackTable)
       .set({
         status,
         moderatorId,
         updatedAt: new Date()
       })
-      .where(eq(feedback.id, id))
+      .where(eq(feedbackTable.id, id))
       .returning();
     
     if (!feedbackItem) {
