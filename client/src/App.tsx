@@ -18,34 +18,13 @@ import InspectorDashboard from "./pages/inspector/Dashboard";
 import ApplicationDetail from "./pages/inspector/ApplicationDetail";
 import AdminDashboard from "./pages/admin/Dashboard";
 import FeedbackModeration from "./pages/admin/FeedbackModeration";
-import { useAuth } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 function Router() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  
-  const ProtectedRoute = ({ component: Component, role }: { component: React.ComponentType, role: string }) => {
-    useEffect(() => {
-      if (!user) {
-        toast({
-          title: "Unauthorized access",
-          description: "Please log in to access this page",
-          variant: "destructive"
-        });
-      } else if (user.role !== role && user.role !== 'admin') {
-        toast({
-          title: "Permission denied",
-          description: "You don't have permission to access this page",
-          variant: "destructive"
-        });
-      }
-    }, [user]);
-    
-    return user && (user.role === role || user.role === 'admin') ? <Component /> : <NotFound />;
-  };
-
+  // Simple router without auth checks for now
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -56,18 +35,6 @@ function Router() {
       <Route path="/certificate/:id" component={Certificate} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
-      <Route path="/inspector/dashboard">
-        {() => <ProtectedRoute component={InspectorDashboard} role="inspector" />}
-      </Route>
-      <Route path="/inspector/application/:id">
-        {() => <ProtectedRoute component={ApplicationDetail} role="inspector" />}
-      </Route>
-      <Route path="/admin/dashboard">
-        {() => <ProtectedRoute component={AdminDashboard} role="admin" />}
-      </Route>
-      <Route path="/admin/feedback">
-        {() => <ProtectedRoute component={FeedbackModeration} role="admin" />}
-      </Route>
       <Route component={NotFound} />
     </Switch>
   );
