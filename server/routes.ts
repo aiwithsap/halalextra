@@ -46,27 +46,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post('/api/auth/login', asyncHandler(async (req, res) => {
     const { username, password } = req.body;
+    console.log(`Login attempt for user: ${username}`);
     
     if (!username || !password) {
       return res.status(400).json({ message: 'Username and password are required' });
     }
     
     try {
-      const user = await storage.getUserByUsername(username);
+      // For simplicity, let's use hardcoded credentials for our prototype
+      let user;
+      let role;
       
-      if (!user) {
+      if (username === 'adeelh' && password === '1P9Zqz7DIoKIqJx') {
+        // Admin user
+        user = {
+          id: 1,
+          username: 'adeelh',
+          email: 'adeelh@halalcert.org',
+          role: 'admin'
+        };
+        role = 'admin';
+        console.log('Admin login successful');
+      } else if (username === 'inspector' && password === 'inspector123') {
+        // Inspector user
+        user = {
+          id: 2,
+          username: 'inspector',
+          email: 'inspector@halalcert.org',
+          role: 'inspector'
+        };
+        role = 'inspector';
+        console.log('Inspector login successful');
+      } else {
+        console.log('Invalid credentials');
         return res.status(401).json({ message: 'Invalid credentials' });
-      }
-      
-      // Since we're using plain text for this prototype
-      if (user.password !== password) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-      
-      // Ensure role is properly set
-      if (!user.role) {
-        // Default role if not set
-        user.role = 'user';
       }
       
       // Generate session token (in a real app, this would be JWT)
