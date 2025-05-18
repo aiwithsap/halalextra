@@ -35,20 +35,12 @@ const ConfirmationForm: React.FC<ConfirmationFormProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.ownerName.trim()) {
-      newErrors.ownerName = t("validation.required");
-    }
-    
-    if (!formData.ownerEmail.trim()) {
-      newErrors.ownerEmail = t("validation.required");
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.ownerEmail)) {
+    // Only validate email format if one is provided
+    if (formData.ownerEmail.trim() && !/^\S+@\S+\.\S+$/.test(formData.ownerEmail)) {
       newErrors.ownerEmail = t("validation.invalidEmail");
     }
     
-    if (!formData.ownerPhone.trim()) {
-      newErrors.ownerPhone = t("validation.required");
-    }
-    
+    // Only validate terms acceptance
     if (!formData.termsAccepted) {
       newErrors.termsAccepted = t("validation.acceptTerms");
     }

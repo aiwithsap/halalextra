@@ -34,14 +34,10 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
   };
 
   const validateForm = () => {
+    // All fields in step 2 onwards are optional
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.businessLicense) {
-      newErrors.businessLicense = t("validation.required");
-    }
-    
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const handleSubmit = (e: React.FormEvent) => {

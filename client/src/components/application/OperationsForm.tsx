@@ -67,26 +67,10 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
   };
 
   const validateForm = () => {
+    // All fields in step 2 onwards are optional
     const newErrors: Record<string, string> = {};
-    
-    if (formData.products.length === 0) {
-      newErrors.products = t("validation.atLeastOneRequired");
-    }
-    
-    if (formData.suppliers.length === 0) {
-      newErrors.suppliers = t("validation.atLeastOneRequired");
-    }
-    
-    if (!formData.employeeCount.trim()) {
-      newErrors.employeeCount = t("validation.required");
-    }
-    
-    if (!formData.operatingHours.trim()) {
-      newErrors.operatingHours = t("validation.required");
-    }
-    
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
