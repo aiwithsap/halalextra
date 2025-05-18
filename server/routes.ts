@@ -460,6 +460,16 @@ Please ensure that you or an authorized representative is present during the ins
         return res.status(404).json({ message: 'Certificate not found' });
       }
       
+      // Generate QR code URL for the certificate verification
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+      const verificationUrl = `${baseUrl}/certificate/${certificate.certificateNumber}`;
+      
+      // Generate QR code if it doesn't exist
+      if (!certificate.qrCodeUrl) {
+        certificate.qrCodeUrl = await generateQRCode(verificationUrl);
+        // In a real app, we would save this QR code URL to the database
+      }
+      
       // Format the data for the frontend
       const formattedCertificate = {
         id: certificate.id,
@@ -468,7 +478,8 @@ Please ensure that you or an authorized representative is present during the ins
         status: certificate.status,
         certificateNumber: certificate.certificateNumber,
         issuedDate: certificate.issuedDate.toISOString(),
-        expiryDate: certificate.expiryDate.toISOString()
+        expiryDate: certificate.expiryDate.toISOString(),
+        qrCodeUrl: certificate.qrCodeUrl
       };
       
       res.json({ certificate: formattedCertificate });
