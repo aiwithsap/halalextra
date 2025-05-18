@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 98%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  
+  /* Primary - Teal Color */
+  --primary: 174 100% 23%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary - Warm Beige Color */
+  --secondary: 39 56% 62%;
+  --secondary-foreground: 24 9.8% 10%;
+  
+  /* Accent - Gold Color */
+  --accent: 46 65% 52%;
+  --accent-foreground: 0 0% 100%;
+  
+  /* Status Colors */
+  --success: 122 39% 34%;
+  --warning: 36 100% 50%;
+  --destructive: 0 71% 47%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  
+  --ring: 20 14.3% 4.1%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  
+  /* Primary - Darker Teal for Dark Mode */
+  --primary: 174 96% 12%;
+  --primary-foreground: 0 0% 98%;
+  
+  /* Secondary - Darker Beige for Dark Mode */
+  --secondary: 39 30% 35%;
+  --secondary-foreground: 0 0% 98%;
+  
+  /* Accent - Darker Gold for Dark Mode */
+  --accent: 46 60% 45%;
+  --accent-foreground: 0 0% 98%;
+  
+  /* Status Colors in Dark Mode */
+  --success: 122 39% 34%;
+  --warning: 36 100% 45%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --ring: 240 4.9% 83.9%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  .pattern-bg {
+    background-color: theme('colors.background');
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300796b' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  
+  [dir="rtl"] * {
+    text-align: right;
+  }
+  
+  .multi-step-form .step {
+    display: none;
+  }
+  
+  .multi-step-form .step.active {
+    display: block;
+  }
+  
+  .arabic-text {
+    font-family: 'Amiri', serif;
+  }
+}

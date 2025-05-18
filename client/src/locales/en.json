@@ -1,0 +1,514 @@
+{
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "copy": "Copy",
+    "delete": "Delete",
+    "download": "Download",
+    "edit": "Edit",
+    "error": "Error",
+    "next": "Next",
+    "previous": "Previous",
+    "retry": "Retry",
+    "save": "Save",
+    "search": "Search",
+    "submit": "Submit",
+    "success": "Success",
+    "view": "View",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "apply": "Apply for Certification",
+    "verify": "Verify Certificate",
+    "contact": "Contact Us",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "logout": "Logout",
+    "language": "Language"
+  },
+  "home": {
+    "hero": {
+      "title": "Trusted Halal Certification",
+      "subtitle": "Ensuring authenticity and compliance with Islamic dietary laws",
+      "cta": "Apply for Certification"
+    },
+    "features": {
+      "title": "Our Certification Process",
+      "process": {
+        "application": {
+          "title": "Application",
+          "description": "Submit your business information and documents"
+        },
+        "inspection": {
+          "title": "Inspection",
+          "description": "Onsite evaluation by qualified inspectors"
+        },
+        "certification": {
+          "title": "Certification",
+          "description": "Receive your official Halal certificate and QR code"
+        },
+        "monitoring": {
+          "title": "Monitoring",
+          "description": "Regular follow-ups to ensure continued compliance"
+        }
+      }
+    },
+    "verification": {
+      "title": "Verify Halal Certification",
+      "subtitle": "Check if a business has valid Halal certification",
+      "placeholder": "Enter certificate number or business name",
+      "scanQr": "Scan QR Code",
+      "searchButton": "Search"
+    },
+    "testimonials": {
+      "title": "Trusted by Businesses",
+      "subtitle": "See what our certified partners have to say"
+    },
+    "stats": {
+      "title": "Growing Trust",
+      "certified": "Certified Businesses",
+      "countries": "Countries",
+      "inspectors": "Qualified Inspectors",
+      "years": "Years of Trust"
+    }
+  },
+  "about": {
+    "title": "About Us",
+    "mission": {
+      "title": "Our Mission",
+      "description": "To provide reliable and transparent Halal certification, ensuring that consumers can trust in the integrity of Halal-certified products and services."
+    },
+    "vision": {
+      "title": "Our Vision",
+      "description": "To be the most trusted Halal certification authority, recognized globally for our rigorous standards and unwavering commitment to Islamic dietary laws."
+    },
+    "process": {
+      "title": "Our Certification Process",
+      "steps": {
+        "application": {
+          "title": "Application",
+          "description": "Businesses submit comprehensive information about their operations, ingredients, and processes."
+        },
+        "review": {
+          "title": "Document Review",
+          "description": "Our experts carefully examine all submitted documents for compliance."
+        },
+        "inspection": {
+          "title": "On-site Inspection",
+          "description": "Qualified inspectors visit the facility to verify compliance with Halal standards."
+        },
+        "certification": {
+          "title": "Certification",
+          "description": "Upon approval, businesses receive official certification and unique QR codes."
+        },
+        "monitoring": {
+          "title": "Ongoing Monitoring",
+          "description": "Regular follow-up inspections ensure continued compliance."
+        }
+      }
+    },
+    "team": {
+      "title": "Our Team",
+      "description": "Our certification team consists of qualified Islamic scholars and food safety experts with extensive experience in Halal certification."
+    }
+  },
+  "apply": {
+    "title": "Apply for Halal Certification",
+    "intro": "Complete the following steps to apply for Halal certification for your business",
+    "form": {
+      "steps": {
+        "business": "Business Information",
+        "operations": "Operations Details",
+        "documents": "Required Documents",
+        "review": "Review & Submit"
+      },
+      "businessInfo": {
+        "title": "Business Information",
+        "businessName": "Business Name",
+        "businessType": "Business Type",
+        "businessTypes": {
+          "restaurant": "Restaurant",
+          "cafe": "Cafe",
+          "bakery": "Bakery",
+          "butcher": "Butcher Shop",
+          "grocery": "Grocery Store",
+          "manufacturer": "Food Manufacturer",
+          "other": "Other"
+        },
+        "abn": "ABN/Business ID",
+        "established": "Year Established",
+        "address": "Street Address",
+        "city": "City",
+        "state": "State/Province",
+        "postcode": "Postcode/ZIP"
+      },
+      "operations": {
+        "title": "Operations Details",
+        "products": "Products/Menu Items",
+        "productsPlaceholder": "Add products (press Enter after each item)",
+        "suppliers": "Suppliers",
+        "supplierName": "Supplier Name",
+        "supplierMaterial": "Materials/Ingredients Supplied",
+        "supplierCertified": "Halal Certified",
+        "addSupplier": "Add Supplier",
+        "employeeCount": "Number of Employees",
+        "operatingHours": "Operating Hours"
+      },
+      "documents": {
+        "title": "Required Documents",
+        "businessLicense": "Business License",
+        "floorPlan": "Floor Plan",
+        "supplierCertificates": "Supplier Certificates",
+        "additionalDocuments": "Additional Documents",
+        "uploadHint": "Upload files (PDF, JPG, PNG, DOC up to 5MB)",
+        "dragDrop": "Drag and drop files here, or click to browse"
+      },
+      "review": {
+        "title": "Review Your Application",
+        "businessSection": "Business Information",
+        "operationsSection": "Operations Details",
+        "documentsSection": "Uploaded Documents",
+        "contactSection": "Contact Information",
+        "ownerName": "Owner/Manager Name",
+        "ownerEmail": "Email",
+        "ownerPhone": "Phone Number",
+        "termsCheckbox": "I confirm that all information provided is accurate and complete. I understand that providing false information may result in rejection of the application or revocation of certification.",
+        "submitting": "Submitting application...",
+        "submitButton": "Submit Application"
+      }
+    },
+    "success": {
+      "title": "Application Submitted",
+      "message": "Your application has been successfully submitted. You will receive a confirmation email shortly.",
+      "reference": "Reference Number",
+      "nextSteps": "What happens next?",
+      "steps": {
+        "review": "Our team will review your application within 3-5 business days",
+        "contact": "We may contact you for additional information if needed",
+        "inspection": "If your application is preliminarily approved, we will schedule an on-site inspection",
+        "decision": "You will be notified of the final decision after the inspection"
+      },
+      "dashboard": "Go to Dashboard",
+      "home": "Return to Home"
+    }
+  },
+  "verify": {
+    "title": "Verify Halal Certificate",
+    "subtitle": "Check the authenticity of a Halal certificate by entering the certificate number or scanning the QR code",
+    "certificateNumber": "Certificate Number",
+    "search": "Search",
+    "scanQR": "Scan QR Code",
+    "scanning": "Scanning...",
+    "searchResults": "Search Results",
+    "validCertificate": "Valid Certificate",
+    "invalidCertificate": "Invalid Certificate",
+    "expiredCertificate": "Expired Certificate",
+    "notFound": "Certificate Not Found",
+    "verified": {
+      "title": "Certificate Verified",
+      "valid": "This certificate is valid",
+      "expired": "This certificate has expired",
+      "revoked": "This certificate has been revoked",
+      "details": "Certificate Details",
+      "business": "Business Name",
+      "address": "Address",
+      "certificateNumber": "Certificate Number",
+      "issuedDate": "Issued Date",
+      "expiryDate": "Expiry Date",
+      "status": "Status"
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Have questions or need assistance? Reach out to our team",
+    "form": {
+      "name": "Your Name",
+      "email": "Email Address",
+      "phone": "Phone Number (optional)",
+      "subject": "Subject",
+      "message": "Message",
+      "submit": "Send Message"
+    },
+    "info": {
+      "title": "Get in Touch",
+      "address": "Address",
+      "email": "Email",
+      "phone": "Phone",
+      "hours": "Office Hours"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "questions": {
+        "q1": "How long does the certification process take?",
+        "a1": "The certification process typically takes 4-6 weeks from application to final certification, depending on the complexity of your business operations and your readiness for inspection.",
+        "q2": "How much does certification cost?",
+        "a2": "Certification fees vary based on the size and type of your business. Please contact us for a customized quote.",
+        "q3": "How long is the certificate valid?",
+        "a3": "Halal certificates are valid for one year from the date of issue, after which renewal is required.",
+        "q4": "Do you certify businesses outside the country?",
+        "a4": "Yes, we offer international certification services. Contact us for more information about international inspections and requirements."
+      }
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}",
+    "overview": "Dashboard Overview",
+    "applicationsTitle": "Your Applications",
+    "certificatesTitle": "Your Certificates",
+    "noApplications": "No applications found",
+    "noCertificates": "No certificates found",
+    "applicationStatus": {
+      "pending": "Pending",
+      "under_review": "Under Review",
+      "inspection_scheduled": "Inspection Scheduled",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "certificateStatus": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "subtitle": "Manage applications, certifications, and system settings",
+      "overview": {
+        "title": "Overview",
+        "pendingApplications": "Pending Applications",
+        "scheduledInspections": "Scheduled Inspections",
+        "activeCertificates": "Active Certificates",
+        "expiringCertificates": "Certificates Expiring Soon"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "viewApplications": "View Applications",
+        "scheduledInspections": "Scheduled Inspections",
+        "issueCertificate": "Issue Certificate",
+        "viewReports": "View Reports"
+      }
+    },
+    "applications": {
+      "title": "Applications",
+      "subtitle": "Manage certification applications",
+      "filter": "Filter by Status",
+      "statusOptions": {
+        "all": "All Applications",
+        "pending": "Pending",
+        "under_review": "Under Review",
+        "inspection_scheduled": "Inspection Scheduled",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "noApplications": "No applications found",
+      "tableHeaders": {
+        "id": "ID",
+        "business": "Business",
+        "location": "Location",
+        "status": "Status",
+        "submitted": "Submitted",
+        "actions": "Actions"
+      }
+    },
+    "applicationDetail": {
+      "title": "Application Details",
+      "business": "Business Information",
+      "operations": "Operations",
+      "documents": "Documents",
+      "status": "Application Status",
+      "inspections": "Inspections",
+      "updateStatus": "Update Status",
+      "scheduleInspection": "Schedule Inspection",
+      "issueCertificate": "Issue Certificate",
+      "rejectApplication": "Reject Application",
+      "confirmReject": "Are you sure you want to reject this application?",
+      "confirmApprove": "Are you sure you want to approve this application?"
+    },
+    "inspections": {
+      "title": "Inspections",
+      "subtitle": "Manage inspection schedule and reports",
+      "upcoming": "Upcoming Inspections",
+      "completed": "Completed Inspections",
+      "noInspections": "No inspections found",
+      "schedule": {
+        "title": "Schedule Inspection",
+        "date": "Inspection Date",
+        "time": "Inspection Time",
+        "inspector": "Assigned Inspector",
+        "notes": "Notes",
+        "submit": "Schedule Inspection"
+      },
+      "report": {
+        "title": "Inspection Report",
+        "business": "Business",
+        "date": "Inspection Date",
+        "inspector": "Inspector",
+        "findings": "Findings",
+        "compliance": "Compliance Status",
+        "notes": "Notes",
+        "decision": "Decision",
+        "submit": "Submit Report"
+      }
+    },
+    "certificates": {
+      "title": "Certificates",
+      "subtitle": "Manage issued certificates",
+      "filter": "Filter by Status",
+      "statusOptions": {
+        "all": "All Certificates",
+        "active": "Active",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "noCertificates": "No certificates found",
+      "tableHeaders": {
+        "id": "ID",
+        "business": "Business",
+        "location": "Location",
+        "issued": "Issued Date",
+        "expires": "Expiry Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "revoke": {
+        "title": "Revoke Certificate",
+        "reason": "Reason for Revocation",
+        "confirm": "Are you sure you want to revoke this certificate?",
+        "submit": "Revoke Certificate"
+      }
+    },
+    "feedback": {
+      "pageTitle": "Feedback Moderation",
+      "pageDescription": "Review and moderate customer feedback and complaints",
+      "pendingModeration": "Pending Moderation",
+      "pendingModerationDesc": "Review and approve or reject feedback from customers",
+      "filterTitle": "Filter Options",
+      "filterDescription": "Refine feedback based on type and status",
+      "feedbackType": "Feedback Type",
+      "all": "All Feedback",
+      "reviews": "Reviews",
+      "complaints": "Complaints",
+      "review": "Review",
+      "complaint": "Complaint",
+      "anonymous": "Anonymous Submission",
+      "by": "By {{name}}",
+      "noFeedback": "All Clear!",
+      "noFeedbackDesc": "There's no pending feedback waiting for moderation at this time.",
+      "details": "Feedback Details",
+      "storeDetails": "Store Information",
+      "feedbackContent": "Feedback Content",
+      "submittedBy": "Submitted By",
+      "submissionDate": "Submission Date",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirmModeration": "Confirm Moderation",
+      "confirmApprove": "Are you sure you want to approve this feedback?",
+      "confirmReject": "Are you sure you want to reject this feedback?",
+      "confirmApproveDesc": "This feedback will be published publicly on the store's page.",
+      "confirmRejectDesc": "This feedback will be removed and not displayed publicly.",
+      "moderationSuccess": "Moderation Successful",
+      "approveSuccess": "Feedback Approved",
+      "rejectSuccess": "Feedback Rejected",
+      "approveSuccessDesc": "The feedback has been approved and published.",
+      "rejectSuccessDesc": "The feedback has been rejected and removed.",
+      "moderationError": "Error moderating feedback",
+      "error": "Something went wrong",
+      "errorDesc": "There was a problem loading the feedback data. Please try again.",
+      "stats": {
+        "title": "Feedback Stats",
+        "pendingCount": "Pending Total",
+        "reviewCount": "Reviews",
+        "complaintCount": "Complaints"
+      }
+    }
+  },
+  "meta": {
+    "home": {
+      "title": "Halal Certification Authority - Trusted Halal Certification",
+      "description": "We provide trusted and reliable Halal certification services to ensure compliance with Islamic dietary laws. Apply for certification or verify Halal certificates."
+    },
+    "about": {
+      "title": "About Us - Halal Certification Authority",
+      "description": "Learn about our mission, vision, certification process and team of experts dedicated to upholding Halal standards and authenticity."
+    },
+    "apply": {
+      "title": "Apply for Halal Certification - Halal Certification Authority",
+      "description": "Submit your business for Halal certification. Our simple application process guides you through each step required for official Halal compliance."
+    },
+    "verify": {
+      "title": "Verify Halal Certificate - Halal Certification Authority",
+      "description": "Verify the authenticity of Halal certificates by searching certificate numbers or scanning QR codes. Ensure businesses are genuinely Halal certified."
+    },
+    "contact": {
+      "title": "Contact Us - Halal Certification Authority",
+      "description": "Have questions about Halal certification? Contact our team for information about our process, requirements, or to inquire about your application status."
+    },
+    "admin": {
+      "dashboard": {
+        "title": "Admin Dashboard - Halal Certification Authority",
+        "description": "Administrative dashboard for managing Halal certification applications, inspections, and certificates."
+      },
+      "applications": {
+        "title": "Manage Applications - Halal Certification Authority",
+        "description": "Review and process Halal certification applications from businesses seeking compliance with Islamic dietary laws."
+      },
+      "inspections": {
+        "title": "Manage Inspections - Halal Certification Authority",
+        "description": "Schedule and review on-site inspections for businesses applying for Halal certification."
+      },
+      "certificates": {
+        "title": "Manage Certificates - Halal Certification Authority",
+        "description": "Oversee issued Halal certificates, monitor expirations, and handle certificate revocations when necessary."
+      },
+      "feedback": {
+        "title": "Feedback Moderation - Halal Certification Authority",
+        "description": "Review and moderate customer feedback and complaints about Halal-certified businesses."
+      }
+    },
+    "inspector": {
+      "dashboard": {
+        "title": "Inspector Dashboard - Halal Certification Authority",
+        "description": "Manage assigned inspections, submit reports, and track certification progress for businesses."
+      },
+      "inspections": {
+        "title": "My Inspections - Halal Certification Authority",
+        "description": "View upcoming and completed inspections, access business information, and submit inspection reports."
+      }
+    }
+  },
+  "footer": {
+    "about": "About Us",
+    "apply": "Apply for Certification",
+    "verify": "Verify Certificate",
+    "contact": "Contact Us",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "copyright": "© {{year}} Halal Certification Authority. All rights reserved."
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last Updated: May 1, 2023"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last Updated: May 1, 2023"
+  },
+  "error": {
+    "notFound": {
+      "title": "Page Not Found",
+      "message": "The page you are looking for does not exist or has been moved.",
+      "action": "Return to Home"
+    },
+    "general": {
+      "title": "Something Went Wrong",
+      "message": "An unexpected error occurred. Please try again later.",
+      "action": "Return to Home"
+    }
+  }
+}
