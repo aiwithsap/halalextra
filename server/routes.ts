@@ -567,6 +567,85 @@ Please ensure that you or an authorized representative is present during the ins
     }
   }));
   
+  // Admin API routes
+  app.get('/api/admin/applications/pending', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const pendingApplications = await storage.getPendingApplications();
+      res.json(pendingApplications);
+    } catch (error) {
+      console.error('Error fetching pending applications:', error);
+      res.status(500).json({ message: 'An error occurred while fetching pending applications' });
+    }
+  }));
+  
+  app.patch('/api/admin/applications/:id/status', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, notes } = req.body;
+      
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status value' });
+      }
+      
+      const application = await storage.getApplication(id);
+      if (!application) {
+        return res.status(404).json({ message: 'Application not found' });
+      }
+      
+      const updatedApplication = await storage.updateApplicationStatus(id, status, notes);
+      
+      // Create audit log
+      await storage.createAuditLog({
+        action: `application_${status}`,
+        entity: 'application',
+        entityId: id,
+        userId: req.user.id,
+        details: { notes, previousStatus: application.status },
+        ipAddress: req.ip
+      });
+      
+      // If approved, create a certificate
+      if (status === 'approved') {
+        const now = new Date();
+        const oneYearLater = new Date(now);
+        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+        
+        const certificateNumber = `HAL-${new Date().getFullYear()}-${id.toString().padStart(5, '0')}`;
+        const qrCodeUrl = await generateQRCode(`https://halalcert.org/verify/${id}`);
+        
+        await storage.createCertificate({
+          storeId: application.storeId,
+          applicationId: application.id,
+          status: 'active',
+          certificateNumber,
+          issuedBy: req.user.id,
+          issuedDate: now,
+          expiryDate: oneYearLater,
+          qrCodeUrl
+        });
+      }
+      
+      // Send email notification
+      const store = await storage.getStore(application.storeId);
+      if (store) {
+        try {
+          await sendEmail({
+            to: store.ownerEmail,
+            subject: `Halal Certification Application ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+            text: `Dear ${store.ownerName},\n\nYour application for Halal Certification has been ${status}. ${notes ? `\n\nNotes: ${notes}` : ''}\n\n${status === 'approved' ? 'Congratulations! You may now display your Halal Certificate.' : 'We encourage you to review our requirements and reapply once you meet them.'}\n\nRegards,\nHalal Certification Authority`
+          });
+        } catch (error) {
+          console.error('Failed to send email notification:', error);
+        }
+      }
+      
+      res.json(updatedApplication);
+    } catch (error) {
+      console.error('Error updating application status:', error);
+      res.status(500).json({ message: 'An error occurred while updating application status' });
+    }
+  }));
+  
   // Feedback routes
   app.post('/api/feedback', asyncHandler(async (req, res) => {
     try {

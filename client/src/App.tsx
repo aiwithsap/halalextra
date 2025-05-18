@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,13 +18,39 @@ import InspectorDashboard from "./pages/inspector/Dashboard";
 import ApplicationDetail from "./pages/inspector/ApplicationDetail";
 import AdminDashboard from "./pages/admin/Dashboard";
 import FeedbackModeration from "./pages/admin/FeedbackModeration";
+import Applications from "./pages/admin/Applications";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 function Router() {
-  // Simple router without auth checks for now
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  // Protected route component
+  const ProtectedRoute = ({ component: Component, roles, ...rest }: any) => {
+    if (!user) {
+      toast({
+        title: "Access denied",
+        description: "You must be logged in to access this page",
+        variant: "destructive"
+      });
+      return <Redirect to="/" />;
+    }
+    
+    if (roles && !roles.includes(user.role)) {
+      toast({
+        title: "Permission denied",
+        description: "You don't have permission to access this page",
+        variant: "destructive"
+      });
+      return <Redirect to="/" />;
+    }
+    
+    return <Component {...rest} />;
+  };
+  
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -35,6 +61,26 @@ function Router() {
       <Route path="/certificate/:id" component={Certificate} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
+      
+      {/* Admin Routes */}
+      <Route path="/admin/dashboard">
+        <ProtectedRoute component={AdminDashboard} roles={['admin']} />
+      </Route>
+      <Route path="/admin/applications">
+        <ProtectedRoute component={Applications} roles={['admin']} />
+      </Route>
+      <Route path="/admin/feedback">
+        <ProtectedRoute component={FeedbackModeration} roles={['admin']} />
+      </Route>
+      
+      {/* Inspector Routes */}
+      <Route path="/inspector/dashboard">
+        <ProtectedRoute component={InspectorDashboard} roles={['inspector']} />
+      </Route>
+      <Route path="/inspector/application/:id">
+        <ProtectedRoute component={ApplicationDetail} roles={['inspector']} />
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );
