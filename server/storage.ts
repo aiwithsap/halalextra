@@ -91,6 +91,14 @@ export class MemStorage implements IStorage {
       role: "admin"
     });
     
+    // Hardcoded admin user with specified credentials
+    this.createUser({
+      username: "adeelh",
+      password: "$2b$10$8QKR8SDogTNHUgA3XAx81.K6RFZv4D7ipNYLdNm09NzJfx1YiOHlq", // hashed '1P9Zqz7DIoKIqJx'
+      email: "adeelh@halalcert.org",
+      role: "admin"
+    });
+    
     this.createUser({
       username: "inspector",
       password: "$2b$10$vDuGPB5.OjrviNwJDPP4w.2g6VcJvbq/kBBqlE/gCm8wvjZDR7h6C", // hashed 'inspector123'
