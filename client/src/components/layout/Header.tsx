@@ -2,11 +2,32 @@ import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Menu, User, LogOut, Layers, FileText, Settings } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { t } = useTranslation();
+  
+  // To avoid the error when app is initializing, provide defaults
+  let user = null;
+  let logout = () => {};
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+    logout = auth.logout;
+  } catch (error) {
+    console.log("Auth context not available yet");
+  }
 
   const isActive = (path: string) => {
     return location === path;
@@ -75,13 +96,74 @@ const Header = () => {
             </Link>
           </nav>
 
-          {/* Login Button & Mobile Menu */}
+          {/* Login/User Menu & Mobile Menu */}
           <div className="flex items-center space-x-4">
-            <Button 
-              className="bg-primary hover:bg-primary/90"
-            >
-              Login
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {user.username}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  {user.role === 'admin' && (
+                    <>
+                      <DropdownMenuItem 
+                        onClick={() => setLocation("/admin/dashboard")}
+                        className="cursor-pointer"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Admin Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setLocation("/admin/applications")}
+                        className="cursor-pointer"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Review Applications
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  
+                  {user.role === 'inspector' && (
+                    <>
+                      <DropdownMenuItem 
+                        onClick={() => setLocation("/inspector/dashboard")}
+                        className="cursor-pointer"
+                      >
+                        <Layers className="h-4 w-4 mr-2" />
+                        Inspector Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      logout();
+                      setLocation("/");
+                    }}
+                    className="cursor-pointer text-destructive"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button 
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => setLocation("/login")}
+              >
+                <User className="h-4 w-4 mr-2" />
+                Login
+              </Button>
+            )}
 
             {/* Mobile Menu Button */}
             <Sheet>

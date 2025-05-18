@@ -42,16 +42,21 @@ export default function Applications() {
   const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
 
   // Fetch pending applications
-  const { data: applications, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<ApplicationWithStore[]>({
     queryKey: ['/api/admin/applications/pending'],
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
+  
+  const applications = data || [];
 
   // Approve application mutation
   const approveMutation = useMutation({
     mutationFn: async (applicationId: number) => {
       return apiRequest(`/api/admin/applications/${applicationId}/status`, {
         method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ status: 'approved' })
       });
     },
@@ -76,6 +81,9 @@ export default function Applications() {
     mutationFn: async ({ applicationId, notes }: { applicationId: number, notes: string }) => {
       return apiRequest(`/api/admin/applications/${applicationId}/status`, {
         method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ status: 'rejected', notes })
       });
     },
