@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLanguage } from "@/contexts/LanguageContext";
 import MultiStepForm from "@/components/application/MultiStepForm";
 
 const ApplicationSection = () => {
   const { t } = useTranslation();
-  const { isRtl } = useLanguage();
+  // Remove the dependency on useLanguage
+  const isRtl = document.documentElement.dir === "rtl";
 
   return (
     <section id="apply" className="py-12 md:py-16 bg-gray-50">

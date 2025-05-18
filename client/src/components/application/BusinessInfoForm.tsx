@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +25,8 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
   nextStep 
 }) => {
   const { t } = useTranslation();
-  const { isRtl } = useLanguage();
+  // Use document direction instead of context
+  const isRtl = document.documentElement.dir === "rtl";
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
