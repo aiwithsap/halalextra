@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ApplicationFormData } from "./MultiStepForm";
@@ -20,7 +19,8 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
   prevStep 
 }) => {
   const { t } = useTranslation();
-  const { isRtl } = useLanguage();
+  // Use document direction instead of context
+  const isRtl = document.documentElement.dir === "rtl";
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof ApplicationFormData) => {
