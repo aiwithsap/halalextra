@@ -1,0 +1,23 @@
+{
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "copy": "Copy",
+    "delete": "Delete",
+    "download": "Download",
+    "edit": "Edit",
+    "error": "Error",
+    "next": "Next",
+    "previous": "Previous",
+    "retry": "Retry",
+    "save": "Save",
+    "search": "Search",
+    "submit": "Submit",
+    "success": "Success",
+    "view": "View",
+    "yes": "Yes",
+    "no": "No"
+  }
+}
