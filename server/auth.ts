@@ -1,6 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
 
+// Extend Express Request type to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: number;
+        username: string;
+        role: string;
+      };
+    }
+  }
+}
+
 /**
  * Authentication middleware to protect routes
  */
@@ -25,7 +38,11 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
     
     // Add user info to request object
-    req.user = decoded;
+    req.user = {
+      userId: decoded.userId,
+      username: decoded.username,
+      role: decoded.role || 'user' // Provide a default role if not present
+    };
     
     next();
   } catch (error) {
