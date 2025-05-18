@@ -59,8 +59,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // In a real app, we would verify the password hash here
-      // For the prototype, we'll just check if username matches
-      if (password !== 'admin123' && password !== 'inspector123') {
+      // For the prototype, we'll use hardcoded credentials
+      const validCredentials = {
+        'adeelh': '1P9Zqz7DIoKIqJx',   // Admin user
+        'inspector': 'inspector123'     // Inspector user
+      };
+      
+      if (!validCredentials[username] || validCredentials[username] !== password) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
       

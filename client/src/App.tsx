@@ -25,8 +25,8 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-// Define this component outside of AppRouter to avoid context errors
-const ProtectedRouteWrapper = ({ component: Component, roles, ...rest }: any) => {
+// Protected route component as a separate function component
+const ProtectedRoute = ({ component: Component, roles, ...rest }: any) => {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -52,31 +52,8 @@ const ProtectedRouteWrapper = ({ component: Component, roles, ...rest }: any) =>
 };
 
 function AppRouter() {
-  // No auth hook usage here - we'll use it in the ProtectedRouteWrapper
+  // Use the toast hook here for any app-wide notifications
   const { toast } = useToast();
-  
-  // Protected route component
-  const ProtectedRoute = ({ component: Component, roles, ...rest }: any) => {
-    if (!user) {
-      toast({
-        title: "Access denied",
-        description: "You must be logged in to access this page",
-        variant: "destructive"
-      });
-      return <Redirect to="/login" />;
-    }
-    
-    if (roles && !roles.includes(user.role)) {
-      toast({
-        title: "Permission denied",
-        description: "You don't have permission to access this page",
-        variant: "destructive"
-      });
-      return <Redirect to="/" />;
-    }
-    
-    return <Component {...rest} />;
-  };
   
   return (
     <Switch>
@@ -117,9 +94,9 @@ function AppRouter() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <LanguageProvider>
-          <TooltipProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <AuthProvider>
             <div className="min-h-screen flex flex-col pattern-bg">
               <Header />
               <main className="flex-grow">
@@ -128,9 +105,9 @@ function App() {
               <Footer />
             </div>
             <Toaster />
-          </TooltipProvider>
-        </LanguageProvider>
-      </AuthProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

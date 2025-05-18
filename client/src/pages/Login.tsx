@@ -59,8 +59,35 @@ export default function Login() {
         description: "You have been successfully logged in",
       });
       
-      // Redirect based on role (this will happen after user data is loaded in AuthContext)
-      setLocation("/");
+      // Redirect based on user role
+      const userRole = await (async () => {
+        try {
+          // Get current user info after login
+          const response = await fetch("/api/auth/me", {
+            headers: {
+              "Authorization": `Bearer ${localStorage.getItem("token")}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            return data.user.role;
+          }
+          return null;
+        } catch (error) {
+          console.error("Error getting user role:", error);
+          return null;
+        }
+      })();
+      
+      // Redirect based on role
+      if (userRole === "admin") {
+        setLocation("/admin/applications");
+      } else if (userRole === "inspector") {
+        setLocation("/inspector/dashboard");
+      } else {
+        setLocation("/")
+      }
     } catch (err: any) {
       setError(err.message || "Failed to login. Please check your credentials.");
     } finally {
