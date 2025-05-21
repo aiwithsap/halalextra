@@ -55,6 +55,40 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
   ) => {
     const file = formData[field] as File | null;
     
+    // Handle drag and drop events
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dropzone = e.currentTarget;
+      dropzone.classList.add('border-primary', 'bg-primary/5');
+    };
+    
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dropzone = e.currentTarget;
+      dropzone.classList.remove('border-primary', 'bg-primary/5');
+    };
+    
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dropzone = e.currentTarget;
+      dropzone.classList.remove('border-primary', 'bg-primary/5');
+      
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const droppedFile = e.dataTransfer.files[0];
+        updateFormData({ [field]: droppedFile });
+      }
+    };
+    
+    const triggerFileInput = () => {
+      const fileInput = document.getElementById(field.toString()) as HTMLInputElement;
+      if (fileInput) {
+        fileInput.click();
+      }
+    };
+    
     return (
       <div className="mb-6">
         <Label className="block text-gray-700 text-sm font-medium mb-2">
@@ -82,7 +116,13 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
             </Button>
           </div>
         ) : (
-          <div className={`border-2 border-dashed rounded-md p-6 text-center ${errors[field] ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-primary'}`}>
+          <div 
+            className={`border-2 border-dashed rounded-md p-6 text-center ${errors[field] ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-primary'} transition-colors cursor-pointer`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={triggerFileInput}
+          >
             <div className="flex flex-col items-center">
               <Upload className="h-10 w-10 text-gray-400 mb-2" />
               <p className="text-sm font-medium">Drag and drop files here</p>
@@ -94,15 +134,17 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
                 onChange={(e) => handleFileChange(e, field)}
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
               />
-              <label htmlFor={field.toString()}>
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  className="text-primary border-primary hover:bg-primary/10"
-                >
-                  Browse Files
-                </Button>
-              </label>
+              <Button 
+                type="button" 
+                variant="outline"
+                className="text-primary border-primary hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerFileInput();
+                }}
+              >
+                Browse Files
+              </Button>
             </div>
           </div>
         )}
