@@ -146,14 +146,14 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                 type="text"
                 value={newSupplier.name}
                 onChange={(e) => setNewSupplier({...newSupplier, name: e.target.value})}
-                placeholder={t("apply.form.operations.supplierName")}
+                placeholder="Supplier Name"
                 className="border border-gray-300 rounded-md"
               />
               <Input
                 type="text"
                 value={newSupplier.material}
                 onChange={(e) => setNewSupplier({...newSupplier, material: e.target.value})}
-                placeholder={t("apply.form.operations.supplierMaterial")}
+                placeholder="Material/Ingredient"
                 className="border border-gray-300 rounded-md"
               />
             </div>
@@ -166,7 +166,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                 }
               />
               <Label htmlFor="supplierCertified" className="text-sm font-normal">
-                {t("apply.form.operations.supplierCertified")}
+                Halal Certified
               </Label>
             </div>
             <Button 
@@ -175,7 +175,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
               className="w-full bg-primary hover:bg-primary/90 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
-              {t("apply.form.operations.addSupplier")}
+              Add Supplier
             </Button>
           </div>
           
@@ -188,9 +188,9 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                     <div className="text-sm text-gray-500">{supplier.material}</div>
                     <div className="text-xs">
                       {supplier.certified ? (
-                        <span className="text-success">{t("apply.form.operations.certified")}</span>
+                        <span className="text-success">Certified</span>
                       ) : (
-                        <span className="text-gray-500">{t("apply.form.operations.notCertified")}</span>
+                        <span className="text-gray-500">Not Certified</span>
                       )}
                     </div>
                   </div>
@@ -207,7 +207,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
               ))}
             </div>
           ) : (
-            <div className="text-gray-500 text-sm italic">{t("apply.form.operations.noSuppliersAdded")}</div>
+            <div className="text-gray-500 text-sm italic">No suppliers added yet</div>
           )}
           
           {errors.suppliers && (
@@ -218,7 +218,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <Label htmlFor="employeeCount" className="block text-gray-700 text-sm font-medium mb-2">
-              {t("apply.form.operations.employeeCount")} *
+              Number of Employees *
             </Label>
             <Input
               type="number"
@@ -236,7 +236,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
           
           <div>
             <Label htmlFor="operatingHours" className="block text-gray-700 text-sm font-medium mb-2">
-              {t("apply.form.operations.operatingHours")} *
+              Operating Hours *
             </Label>
             <Input
               type="text"
