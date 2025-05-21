@@ -95,7 +95,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                 type="text"
                 value={newProduct}
                 onChange={(e) => setNewProduct(e.target.value)}
-                placeholder={t("apply.productPlaceholder")}
+                placeholder={t("apply.form.operations.productPlaceholder")}
                 className="w-full border border-gray-300 rounded-md"
               />
               <Button 
@@ -126,7 +126,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
               ))}
             </div>
           ) : (
-            <div className="text-gray-500 text-sm italic">{t("apply.noProductsAdded")}</div>
+            <div className="text-gray-500 text-sm italic">{t("apply.form.operations.noProductsAdded")}</div>
           )}
           
           {errors.products && (
@@ -136,9 +136,9 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
         
         <div>
           <Label className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.suppliers")} *
+            {t("apply.form.operations.suppliers")} *
           </Label>
-          <p className="text-sm text-gray-500 mb-2">{t("apply.suppliersDescription")}</p>
+          <p className="text-sm text-gray-500 mb-2">{t("apply.form.operations.suppliersDescription")}</p>
           
           <div className="mb-2 space-y-2">
             <div className="grid grid-cols-2 gap-2">
@@ -146,14 +146,14 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                 type="text"
                 value={newSupplier.name}
                 onChange={(e) => setNewSupplier({...newSupplier, name: e.target.value})}
-                placeholder={t("apply.supplierName")}
+                placeholder={t("apply.form.operations.supplierName")}
                 className="border border-gray-300 rounded-md"
               />
               <Input
                 type="text"
                 value={newSupplier.material}
                 onChange={(e) => setNewSupplier({...newSupplier, material: e.target.value})}
-                placeholder={t("apply.supplierMaterial")}
+                placeholder={t("apply.form.operations.supplierMaterial")}
                 className="border border-gray-300 rounded-md"
               />
             </div>
@@ -166,7 +166,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                 }
               />
               <Label htmlFor="supplierCertified" className="text-sm font-normal">
-                {t("apply.supplierCertified")}
+                {t("apply.form.operations.supplierCertified")}
               </Label>
             </div>
             <Button 
@@ -175,7 +175,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
               className="w-full bg-primary hover:bg-primary/90 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
-              {t("apply.addSupplier")}
+              {t("apply.form.operations.addSupplier")}
             </Button>
           </div>
           
@@ -188,7 +188,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                     <div className="text-sm text-gray-500">{supplier.material}</div>
                     <div className="text-xs">
                       {supplier.certified ? (
-                        <span className="text-success">{t("apply.certified")}</span>
+                        <span className="text-success">{t("apply.form.operations.certified")}</span>
                       ) : (
                         <span className="text-gray-500">{t("apply.notCertified")}</span>
                       )}
