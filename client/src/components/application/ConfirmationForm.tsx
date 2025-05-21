@@ -156,16 +156,26 @@ const ConfirmationForm: React.FC<ConfirmationFormProps> = ({
               </div>
               <div>
                 <p className="text-sm text-gray-500">Documents</p>
-                {typeof formData.documents === 'object' && formData.documents !== null ? (
-                  <ul className="list-disc list-inside text-sm">
-                    {formData.businessLicense && <li>Business License</li>}
-                    {formData.floorPlan && <li>Floor Plan</li>}
-                    {formData.supplierCertificates && <li>Supplier Certificates</li>}
-                    {formData.additionalDocuments && <li>Additional Documents</li>}
-                  </ul>
-                ) : (
-                  <p className="font-medium">No documents uploaded</p>
-                )}
+                <ul className="list-disc list-inside text-sm">
+                  {formData.businessLicense && (
+                    <li>Business License - {formData.businessLicense.name}</li>
+                  )}
+                  {formData.floorPlan && (
+                    <li>Floor Plan - {formData.floorPlan.name}</li>
+                  )}
+                  {formData.supplierCertificates && (
+                    <li>Supplier Certificates - {formData.supplierCertificates.name}</li>
+                  )}
+                  {formData.additionalDocuments && (
+                    <li>Additional Documents - {formData.additionalDocuments.name}</li>
+                  )}
+                  {!formData.businessLicense && 
+                   !formData.floorPlan && 
+                   !formData.supplierCertificates && 
+                   !formData.additionalDocuments && (
+                    <li>No documents uploaded</li>
+                  )}
+                </ul>
               </div>
             </div>
           </div>
