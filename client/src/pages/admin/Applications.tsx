@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Card,
   CardContent,
@@ -36,33 +37,41 @@ interface ApplicationWithStore extends Application {
 
 export default function Applications() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [expandedApplications, setExpandedApplications] = useState<number[]>([]);
   const [rejectionNotes, setRejectionNotes] = useState<string>("");
   const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(localStorage.getItem("token"));
 
   // Fetch pending applications
   const { data, isLoading, error } = useQuery<ApplicationWithStore[]>({
     queryKey: ['/api/admin/applications/pending'],
     staleTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async ({ queryKey }) => {
+      // Make a direct REST API call with the token
       const token = localStorage.getItem("token");
-      const headers: Record<string, string> = {};
       
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
+      if (!token) {
+        throw new Error("Authentication token not found");
       }
       
       const res = await fetch(queryKey[0] as string, {
-        headers
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
+        const errorText = await res.text();
+        throw new Error(`${res.status}: ${errorText || res.statusText}`);
       }
       
       return res.json();
-    }
+    },
+    enabled: !!authToken // Only run query if token exists
   });
   
   const applications = data || [];

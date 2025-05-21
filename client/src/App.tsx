@@ -55,6 +55,30 @@ function AppRouter() {
   // Use the toast hook here for any app-wide notifications
   const { toast } = useToast();
   
+  // Force token refresh for admin pages
+  useEffect(() => {
+    const refreshToken = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const response = await fetch("/api/auth/me", {
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
+          
+          if (!response.ok) {
+            console.log("Token validation failed, redirecting to login");
+          }
+        } catch (error) {
+          console.error("Token refresh error:", error);
+        }
+      }
+    };
+    
+    refreshToken();
+  }, []);
+  
   return (
     <Switch>
       <Route path="/" component={Home} />
