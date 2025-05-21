@@ -125,37 +125,47 @@ const ConfirmationForm: React.FC<ConfirmationFormProps> = ({
           <div className="bg-gray-50 p-4 rounded-md mb-4">
             <div className="grid md:grid-cols-2 gap-x-6 gap-y-3">
               <div>
-                <p className="text-sm text-gray-500">{t("apply.businessName")}</p>
+                <p className="text-sm text-gray-500">Business Name</p>
                 <p className="font-medium">{formData.businessName}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{t("apply.businessType")}</p>
-                <p className="font-medium">{t(`apply.businessTypes.${formData.businessType}`)}</p>
+                <p className="text-sm text-gray-500">Business Type</p>
+                <p className="font-medium">
+                  {formData.businessType === "restaurant" && "Restaurant"}
+                  {formData.businessType === "cafe" && "Cafe"}
+                  {formData.businessType === "foodManufacturer" && "Food Manufacturer"}
+                  {formData.businessType === "grocery" && "Grocery Store"}
+                  {formData.businessType === "other" && "Other"}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{t("apply.abn")}</p>
+                <p className="text-sm text-gray-500">ABN (Australian Business Number)</p>
                 <p className="font-medium">{formData.abn}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{t("apply.address")}</p>
+                <p className="text-sm text-gray-500">Address</p>
                 <p className="font-medium">{`${formData.address}, ${formData.city}, ${formData.state} ${formData.postcode}`}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{t("apply.products")}</p>
+                <p className="text-sm text-gray-500">Products</p>
                 <p className="font-medium">{formData.products.join(", ")}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{t("apply.suppliers")}</p>
+                <p className="text-sm text-gray-500">Suppliers</p>
                 <p className="font-medium">{formData.suppliers.map(s => s.name).join(", ")}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{t("apply.documents")}</p>
-                <ul className="list-disc list-inside text-sm">
-                  {formData.businessLicense && <li>{t("apply.businessLicense")}</li>}
-                  {formData.floorPlan && <li>{t("apply.floorPlan")}</li>}
-                  {formData.supplierCertificates && <li>{t("apply.supplierCertificates")}</li>}
-                  {formData.additionalDocuments && <li>{t("apply.additionalDocuments")}</li>}
-                </ul>
+                <p className="text-sm text-gray-500">Documents</p>
+                {typeof formData.documents === 'object' && formData.documents !== null ? (
+                  <ul className="list-disc list-inside text-sm">
+                    {formData.businessLicense && <li>Business License</li>}
+                    {formData.floorPlan && <li>Floor Plan</li>}
+                    {formData.supplierCertificates && <li>Supplier Certificates</li>}
+                    {formData.additionalDocuments && <li>Additional Documents</li>}
+                  </ul>
+                ) : (
+                  <p className="font-medium">No documents uploaded</p>
+                )}
               </div>
             </div>
           </div>
@@ -174,7 +184,7 @@ const ConfirmationForm: React.FC<ConfirmationFormProps> = ({
                 htmlFor="termsAccepted" 
                 className={`text-sm font-normal ${errors.termsAccepted ? 'text-red-500' : ''}`}
               >
-                {t("apply.termsAgreement")} *
+                I agree to the terms and conditions *
               </Label>
               {errors.termsAccepted && (
                 <p className="text-red-500 text-xs">{errors.termsAccepted}</p>
