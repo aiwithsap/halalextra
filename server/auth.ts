@@ -33,20 +33,41 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     
     console.log("Decoded token:", decoded);
     
-    // For our simplified development system, accept all tokens for hardcoded users
-    // In a real app, we would verify against the database
-    if (decoded.username === 'adeelh' || decoded.username === 'inspector') {
-      // Add user info to request object
+    // Auto-verify admin and inspector users based on token data alone
+    // This is a simplified approach for the prototype only
+    if (decoded.username === 'adeelh') {
+      // Add admin user info to request
       req.user = {
-        userId: decoded.userId,
-        username: decoded.username,
-        role: decoded.role || 'user' // Provide a default role if not present
+        userId: 1,
+        username: 'adeelh',
+        role: 'admin'
       };
-    } else {
-      return res.status(401).json({ message: 'Invalid user in token' });
+      next();
+      return;
+    } else if (decoded.username === 'inspector') {
+      // Add inspector user info to request
+      req.user = {
+        userId: 2,
+        username: 'inspector',
+        role: 'inspector'
+      };
+      next();
+      return;
     }
     
-    next();
+    // For other users, we would verify against the database
+    const user = await storage.getUserByUsername(decoded.username);
+    
+    if (user) {
+      req.user = {
+        userId: user.id,
+        username: user.username,
+        role: user.role
+      };
+      next();
+    } else {
+      return res.status(401).json({ message: 'User not found' });
+    }
   } catch (error) {
     console.error('Auth error:', error);
     return res.status(401).json({ message: 'Invalid token' });
