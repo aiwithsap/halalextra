@@ -162,8 +162,10 @@
     "operations": {
       "title": "Operations Details",
       "products": "Products",
+      "productsDescription": "List the main products or menu items you offer",
       "addProduct": "Add Product",
       "suppliers": "Suppliers",
+      "suppliersDescription": "List your main suppliers and the materials they provide",
       "addSupplier": "Add Supplier",
       "supplierDetails": "Supplier Details",
       "supplierName": "Supplier Name",

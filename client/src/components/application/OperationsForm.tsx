@@ -85,9 +85,9 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
       <div className="space-y-6">
         <div>
           <Label className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.products")} *
+            {t("apply.form.operations.products")} *
           </Label>
-          <p className="text-sm text-gray-500 mb-2">{t("apply.productsDescription")}</p>
+          <p className="text-sm text-gray-500 mb-2">{t("apply.form.operations.productsDescription")}</p>
           
           <div className="mb-2">
             <div className="flex space-x-2">
