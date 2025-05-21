@@ -85,9 +85,9 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
       <div className="space-y-6">
         <div>
           <Label className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.form.operations.products")} *
+            Products *
           </Label>
-          <p className="text-sm text-gray-500 mb-2">{t("apply.form.operations.productsDescription")}</p>
+          <p className="text-sm text-gray-500 mb-2">List the main products or menu items you offer</p>
           
           <div className="mb-2">
             <div className="flex space-x-2">
@@ -95,7 +95,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                 type="text"
                 value={newProduct}
                 onChange={(e) => setNewProduct(e.target.value)}
-                placeholder={t("apply.form.operations.productPlaceholder")}
+                placeholder="Enter product name"
                 className="w-full border border-gray-300 rounded-md"
               />
               <Button 
@@ -126,7 +126,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
               ))}
             </div>
           ) : (
-            <div className="text-gray-500 text-sm italic">{t("apply.form.operations.noProductsAdded")}</div>
+            <div className="text-gray-500 text-sm italic">No products added yet</div>
           )}
           
           {errors.products && (
@@ -136,9 +136,9 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
         
         <div>
           <Label className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.form.operations.suppliers")} *
+            Suppliers *
           </Label>
-          <p className="text-sm text-gray-500 mb-2">{t("apply.form.operations.suppliersDescription")}</p>
+          <p className="text-sm text-gray-500 mb-2">List your main suppliers and the materials they provide</p>
           
           <div className="mb-2 space-y-2">
             <div className="grid grid-cols-2 gap-2">
