@@ -85,8 +85,8 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
           <div className={`border-2 border-dashed rounded-md p-6 text-center ${errors[field] ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-primary'}`}>
             <div className="flex flex-col items-center">
               <Upload className="h-10 w-10 text-gray-400 mb-2" />
-              <p className="text-sm font-medium">{t("apply.dragDropFiles")}</p>
-              <p className="text-xs text-gray-500 mb-3">{t("apply.orBrowse")}</p>
+              <p className="text-sm font-medium">Drag and drop files here</p>
+              <p className="text-xs text-gray-500 mb-3">or browse your computer</p>
               <input
                 type="file"
                 id={field.toString()}
@@ -100,7 +100,7 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
                   variant="outline"
                   className="text-primary border-primary hover:bg-primary/10"
                 >
-                  {t("apply.browseFiles")}
+                  Browse Files
                 </Button>
               </label>
             </div>
@@ -119,27 +119,27 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
       <div className="space-y-2">
         {renderFileInput(
           "businessLicense",
-          t("apply.businessLicense"),
-          t("apply.businessLicenseDescription"),
+          "Business License",
+          "Upload a copy of your valid business license or registration certificate",
           true
         )}
         
         {renderFileInput(
           "floorPlan",
-          t("apply.floorPlan"),
-          t("apply.floorPlanDescription")
+          "Floor Plan",
+          "Provide a layout of your facility showing food preparation, storage, and serving areas"
         )}
         
         {renderFileInput(
           "supplierCertificates",
-          t("apply.supplierCertificates"),
-          t("apply.supplierCertificatesDescription")
+          "Supplier Certificates",
+          "Upload Halal certificates from your major ingredient suppliers if available"
         )}
         
         {renderFileInput(
           "additionalDocuments",
-          t("apply.additionalDocuments"),
-          t("apply.additionalDocumentsDescription")
+          "Additional Documents",
+          "Any other relevant documentation that might support your application"
         )}
       </div>
       
