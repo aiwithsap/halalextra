@@ -112,6 +112,12 @@
     "step2Description": "Upload required documentation including supplier details and ingredient lists",
     "step3Title": "Schedule Inspection",
     "step3Description": "Our inspectors will visit your establishment to verify compliance with Halal standards",
+    "contactInformation": "Contact Information",
+    "contactInformationDescription": "Please provide the primary contact details for your business",
+    "ownerName": "Owner/Manager Name",
+    "ownerEmail": "Contact Email",
+    "ownerPhone": "Contact Phone Number",
+    "applicationSummary": "Application Summary",
     "form": {
       "title": "Begin Your Application Now",
       "subtitle": "Please fill out all the required information below",
