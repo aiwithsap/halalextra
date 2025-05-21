@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { fetchAdminApi, callAdminApi } from "@/lib/adminHelpers";
 import {
   Card,
   CardContent,
@@ -37,7 +37,6 @@ interface ApplicationWithStore extends Application {
 
 export default function Applications() {
   const { toast } = useToast();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [expandedApplications, setExpandedApplications] = useState<number[]>([]);
   const [rejectionNotes, setRejectionNotes] = useState<string>("");
@@ -49,27 +48,7 @@ export default function Applications() {
     queryKey: ['/api/admin/applications/pending'],
     staleTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async ({ queryKey }) => {
-      // Make a direct REST API call with the token
-      const token = localStorage.getItem("token");
-      
-      if (!token) {
-        throw new Error("Authentication token not found");
-      }
-      
-      const res = await fetch(queryKey[0] as string, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`${res.status}: ${errorText || res.statusText}`);
-      }
-      
-      return res.json();
+      return fetchAdminApi(queryKey[0] as string);
     },
     enabled: !!authToken // Only run query if token exists
   });
@@ -79,8 +58,8 @@ export default function Applications() {
   // Approve application mutation
   const approveMutation = useMutation({
     mutationFn: async (applicationId: number) => {
-      return apiRequest('PATCH', `/api/admin/applications/${applicationId}/status`, {
-        body: { status: 'approved' }
+      return callAdminApi('PATCH', `/api/admin/applications/${applicationId}/status`, {
+        status: 'approved'
       });
     },
     onSuccess: () => {
@@ -102,8 +81,9 @@ export default function Applications() {
   // Reject application mutation
   const rejectMutation = useMutation({
     mutationFn: async ({ applicationId, notes }: { applicationId: number, notes: string }) => {
-      return apiRequest('PATCH', `/api/admin/applications/${applicationId}/status`, {
-        body: { status: 'rejected', notes }
+      return callAdminApi('PATCH', `/api/admin/applications/${applicationId}/status`, {
+        status: 'rejected', 
+        notes
       });
     },
     onSuccess: () => {

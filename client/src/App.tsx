@@ -22,30 +22,83 @@ import FeedbackModeration from "./pages/admin/FeedbackModeration";
 import Applications from "./pages/admin/Applications";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 // Protected route component as a separate function component
 const ProtectedRoute = ({ component: Component, roles, ...rest }: any) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [verified, setVerified] = useState(false);
   
-  if (!user) {
-    toast({
-      title: "Access denied",
-      description: "You must be logged in to access this page",
-      variant: "destructive"
-    });
-    return <Redirect to="/login" />;
-  }
+  useEffect(() => {
+    const verifyAuthentication = async () => {
+      try {
+        // For admin pages, we'll use a direct token check
+        const token = localStorage.getItem("token");
+        
+        if (!token) {
+          toast({
+            title: "Access denied",
+            description: "You must be logged in to access this page",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // This will use the token from localStorage
+        const response = await fetch("/api/auth/me", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Verify role check
+          if (roles && !roles.includes(data.user.role)) {
+            toast({
+              title: "Permission denied",
+              description: "You don't have permission to access this page",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          // All checks passed
+          setVerified(true);
+        } else {
+          toast({
+            title: "Session expired",
+            description: "Your session has expired. Please login again.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Auth verification error:", error);
+        toast({
+          title: "Authentication error",
+          description: "There was an error verifying your credentials",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    verifyAuthentication();
+  }, []);
   
-  if (roles && !roles.includes(user.role)) {
-    toast({
-      title: "Permission denied",
-      description: "You don't have permission to access this page",
-      variant: "destructive"
-    });
-    return <Redirect to="/" />;
+  if (!verified) {
+    return (
+      <div className="container py-12 flex flex-col items-center justify-center">
+        <div className="animate-pulse mb-4">
+          <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center">
+            <div className="h-6 w-6 bg-primary/40 rounded-full"></div>
+          </div>
+        </div>
+        <p className="text-gray-500">Verifying your credentials...</p>
+      </div>
+    );
   }
   
   return <Component {...rest} />;
