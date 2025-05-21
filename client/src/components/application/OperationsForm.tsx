@@ -190,7 +190,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
                       {supplier.certified ? (
                         <span className="text-success">{t("apply.form.operations.certified")}</span>
                       ) : (
-                        <span className="text-gray-500">{t("apply.notCertified")}</span>
+                        <span className="text-gray-500">{t("apply.form.operations.notCertified")}</span>
                       )}
                     </div>
                   </div>
@@ -207,7 +207,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
               ))}
             </div>
           ) : (
-            <div className="text-gray-500 text-sm italic">{t("apply.noSuppliersAdded")}</div>
+            <div className="text-gray-500 text-sm italic">{t("apply.form.operations.noSuppliersAdded")}</div>
           )}
           
           {errors.suppliers && (
@@ -218,7 +218,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <Label htmlFor="employeeCount" className="block text-gray-700 text-sm font-medium mb-2">
-              {t("apply.employeeCount")} *
+              {t("apply.form.operations.employeeCount")} *
             </Label>
             <Input
               type="number"
@@ -236,7 +236,7 @@ const OperationsForm: React.FC<OperationsFormProps> = ({
           
           <div>
             <Label htmlFor="operatingHours" className="block text-gray-700 text-sm font-medium mb-2">
-              {t("apply.operatingHours")} *
+              {t("apply.form.operations.operatingHours")} *
             </Label>
             <Input
               type="text"
