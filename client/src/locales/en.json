@@ -119,8 +119,18 @@
   },
   "apply": {
     "title": "Apply for Halal Certification",
-    "intro": "Complete the following steps to apply for Halal certification for your business",
+    "description": "Complete the following steps to apply for Halal certification for your business",
+    "pageTitle": "Start Your Halal Certification Journey",
+    "pageSubtitle": "A simple step-by-step process towards becoming a certified Halal establishment",
+    "step1Title": "Fill Application Form",
+    "step1Description": "Provide your business details and information about your products and operations",
+    "step2Title": "Document Submission",
+    "step2Description": "Upload required documentation including supplier details and ingredient lists",
+    "step3Title": "Schedule Inspection",
+    "step3Description": "Our inspectors will visit your establishment to verify compliance with Halal standards",
     "form": {
+      "title": "Begin Your Application Now",
+      "subtitle": "Please fill out all the required information below",
       "steps": {
         "business": "Business Information",
         "operations": "Operations Details",
