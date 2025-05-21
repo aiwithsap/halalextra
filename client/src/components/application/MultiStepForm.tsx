@@ -180,8 +180,8 @@ const MultiStepForm = () => {
   return (
     <div className="mb-8">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-xl">{t("apply.formTitle")}</h3>
-        <span className="text-sm text-gray-500">* {t("apply.requiredFields")}</span>
+        <h3 className="font-bold text-xl">{t("apply.form.formTitle")}</h3>
+        <span className="text-sm text-gray-500">* {t("apply.form.requiredFields")}</span>
       </div>
       
       {/* Progress Bar */}
@@ -191,25 +191,25 @@ const MultiStepForm = () => {
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold z-10 ${
               currentStep >= 1 ? "bg-primary" : "bg-gray-200 text-gray-700"
             }`}>1</div>
-            <span className="text-sm font-medium mt-1">{t("apply.step1Short")}</span>
+            <span className="text-sm font-medium mt-1">{t("apply.form.step1Short")}</span>
           </div>
           <div className="flex flex-col items-center">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold z-10 ${
               currentStep >= 2 ? "bg-primary" : "bg-gray-200 text-gray-700"
             }`}>2</div>
-            <span className="text-sm font-medium mt-1">{t("apply.step2Short")}</span>
+            <span className="text-sm font-medium mt-1">{t("apply.form.step2Short")}</span>
           </div>
           <div className="flex flex-col items-center">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold z-10 ${
               currentStep >= 3 ? "bg-primary" : "bg-gray-200 text-gray-700"
             }`}>3</div>
-            <span className="text-sm font-medium mt-1">{t("apply.step3Short")}</span>
+            <span className="text-sm font-medium mt-1">{t("apply.form.step3Short")}</span>
           </div>
           <div className="flex flex-col items-center">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold z-10 ${
               currentStep >= 4 ? "bg-primary" : "bg-gray-200 text-gray-700"
             }`}>4</div>
-            <span className="text-sm font-medium mt-1">{t("apply.step4Short")}</span>
+            <span className="text-sm font-medium mt-1">{t("apply.form.step4Short")}</span>
           </div>
         </div>
         <div className="absolute left-0 top-5 h-1 bg-gray-200 w-full -z-10"></div>

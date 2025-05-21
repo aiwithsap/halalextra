@@ -89,7 +89,7 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="businessName" className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.businessName")} *
+            {t("apply.form.businessName")} *
           </Label>
           <Input
             type="text"
@@ -106,22 +106,22 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
         
         <div>
           <Label htmlFor="businessType" className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.businessType")} *
+            {t("apply.form.businessType")} *
           </Label>
           <Select
             value={formData.businessType}
             onValueChange={(value) => handleSelectChange("businessType", value)}
           >
             <SelectTrigger id="businessType" className={`w-full border ${errors.businessType ? 'border-red-500' : 'border-gray-300'}`}>
-              <SelectValue placeholder={t("apply.selectBusinessType")} />
+              <SelectValue placeholder={t("apply.form.selectBusinessType")} />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="restaurant">{t("apply.businessTypes.restaurant")}</SelectItem>
-                <SelectItem value="cafe">{t("apply.businessTypes.cafe")}</SelectItem>
-                <SelectItem value="food-manufacturer">{t("apply.businessTypes.foodManufacturer")}</SelectItem>
-                <SelectItem value="grocery">{t("apply.businessTypes.grocery")}</SelectItem>
-                <SelectItem value="other">{t("apply.businessTypes.other")}</SelectItem>
+                <SelectItem value="restaurant">{t("apply.form.businessTypes.restaurant")}</SelectItem>
+                <SelectItem value="cafe">{t("apply.form.businessTypes.cafe")}</SelectItem>
+                <SelectItem value="food-manufacturer">{t("apply.form.businessTypes.foodManufacturer")}</SelectItem>
+                <SelectItem value="grocery">{t("apply.form.businessTypes.grocery")}</SelectItem>
+                <SelectItem value="other">{t("apply.form.businessTypes.other")}</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -132,7 +132,7 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
         
         <div>
           <Label htmlFor="abn" className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.abn")} *
+            {t("apply.form.abn")} *
           </Label>
           <Input
             type="text"
@@ -149,7 +149,7 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
         
         <div>
           <Label htmlFor="established" className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.established")}
+            {t("apply.form.established")}
           </Label>
           <Input
             type="number"
@@ -165,7 +165,7 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
         
         <div className="md:col-span-2">
           <Label htmlFor="address" className="block text-gray-700 text-sm font-medium mb-2">
-            {t("apply.address")} *
+            {t("apply.form.address")} *
           </Label>
           <Input
             type="text"
@@ -185,7 +185,7 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
                 type="text"
                 id="city"
                 name="city"
-                placeholder={t("apply.city")}
+                placeholder={t("apply.form.city")}
                 value={formData.city}
                 onChange={handleChange}
                 className={`w-full border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary`}
@@ -200,7 +200,7 @@ const BusinessInfoForm: React.FC<BusinessInfoFormProps> = ({
                 onValueChange={(value) => handleSelectChange("state", value)}
               >
                 <SelectTrigger id="state" className={`w-full border ${errors.state ? 'border-red-500' : 'border-gray-300'}`}>
-                  <SelectValue placeholder={t("apply.selectState")} />
+                  <SelectValue placeholder={t("apply.form.selectState")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
