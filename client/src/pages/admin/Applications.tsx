@@ -45,6 +45,24 @@ export default function Applications() {
   const { data, isLoading, error } = useQuery<ApplicationWithStore[]>({
     queryKey: ['/api/admin/applications/pending'],
     staleTime: 10 * 60 * 1000, // 10 minutes
+    queryFn: async ({ queryKey }) => {
+      const token = localStorage.getItem("token");
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      const res = await fetch(queryKey[0] as string, {
+        headers
+      });
+      
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      
+      return res.json();
+    }
   });
   
   const applications = data || [];
@@ -52,12 +70,8 @@ export default function Applications() {
   // Approve application mutation
   const approveMutation = useMutation({
     mutationFn: async (applicationId: number) => {
-      return apiRequest(`/api/admin/applications/${applicationId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: 'approved' })
+      return apiRequest('PATCH', `/api/admin/applications/${applicationId}/status`, {
+        body: { status: 'approved' }
       });
     },
     onSuccess: () => {
@@ -79,12 +93,8 @@ export default function Applications() {
   // Reject application mutation
   const rejectMutation = useMutation({
     mutationFn: async ({ applicationId, notes }: { applicationId: number, notes: string }) => {
-      return apiRequest(`/api/admin/applications/${applicationId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: 'rejected', notes })
+      return apiRequest('PATCH', `/api/admin/applications/${applicationId}/status`, {
+        body: { status: 'rejected', notes }
       });
     },
     onSuccess: () => {
@@ -161,10 +171,10 @@ export default function Applications() {
                 <Badge 
                   variant={
                     application.status === "pending" ? "outline" :
-                    application.status === "approved" ? "success" :
+                    application.status === "approved" ? "default" :
                     "destructive"
                   }
-                  className="capitalize"
+                  className={`capitalize ${application.status === "approved" ? "bg-green-500 hover:bg-green-600" : ""}`}
                 >
                   {application.status}
                 </Badge>
