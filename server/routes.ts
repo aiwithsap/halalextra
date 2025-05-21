@@ -108,10 +108,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
   
   app.get('/api/auth/me', authMiddleware, asyncHandler(async (req, res) => {
-    // @ts-ignore - user is added by authMiddleware
-    const userId = req.user.userId;
-    
     try {
+      // Handle hardcoded admin and inspector users
+      if (req.user.username === 'adeelh') {
+        return res.json({
+          user: {
+            id: 1,
+            username: 'adeelh',
+            role: 'admin',
+            email: 'adeelh@halalcert.org'
+          }
+        });
+      } else if (req.user.username === 'inspector') {
+        return res.json({
+          user: {
+            id: 2,
+            username: 'inspector',
+            role: 'inspector',
+            email: 'inspector@halalcert.org'
+          }
+        });
+      }
+      
+      // For other users, look up in the database
+      const userId = req.user.userId;
       const user = await storage.getUser(userId);
       
       if (!user) {
