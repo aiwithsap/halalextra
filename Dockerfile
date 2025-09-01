@@ -1,48 +1,28 @@
-# Multi-stage build for Railway optimization
-FROM node:18-alpine AS build
+# Single-stage build for simplicity and reliability
+FROM node:18-alpine
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies for build
+# Install all dependencies (dev and prod) to ensure build works
 RUN npm ci
 
-# Copy source code
+# Copy all source files
 COPY . .
 
 # Build the application
 RUN npm run build
 
-FROM node:18-alpine AS runtime
+# Clean up dev dependencies after build (keep vite for production)
+RUN npm prune --production && npm install vite
 
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies (including vite which is needed for server)
-RUN npm ci --only=production
-
-# Copy built application from build stage
-COPY --from=build /app/dist ./dist
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-USER nextjs
-
-# Expose port (Railway will override this)
+# Expose port
 EXPOSE 3000
 
-# Set environment to production
+# Set environment
 ENV NODE_ENV=production
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:'+process.env.PORT||3000+'/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
-
-# Start the application
+# Start command
 CMD ["npm", "start"]
