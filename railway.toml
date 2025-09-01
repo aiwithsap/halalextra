@@ -1,0 +1,20 @@
+[build]
+command = "npm run build"
+
+[deploy]
+startCommand = "npm start"
+
+[[services]]
+name = "halalextra-app"
+source = "."
+
+[services.variables]
+NODE_ENV = "production"
+
+[[services]]
+name = "postgres"
+plugin = "postgresql"
+
+[services.variables]
+POSTGRES_DB = "halalextra"
+POSTGRES_USER = "postgres"
