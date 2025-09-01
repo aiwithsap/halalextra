@@ -1,15 +1,4 @@
 # Multi-stage build for Railway optimization
-FROM node:18-alpine AS dependencies
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies with production optimizations
-RUN npm ci --only=production && npm cache clean --force
-
 FROM node:18-alpine AS build
 
 WORKDIR /app
@@ -31,12 +20,14 @@ FROM node:18-alpine AS runtime
 # Set working directory
 WORKDIR /app
 
-# Copy production dependencies from dependencies stage
-COPY --from=dependencies /app/node_modules ./node_modules
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies (including vite which is needed for server)
+RUN npm ci --only=production
 
 # Copy built application from build stage
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/package*.json ./
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs

@@ -235,6 +235,9 @@ For deployment issues:
 3. Verify environment variables are correctly set
 4. Test database connectivity
 
+# Transport Changes to Railway.com
+I want you to use the Railway GraphQL API directly to read the logs and suggest corrections. I dont want to run that script myself. The whole point of this integration is that I dont have to copy paste railway.com logs for you. After pushing changes, wait for 4 minutes before you start using the Railway GraphQL API to check for issues. If issues are found, diagnose and suggest solutions promptly. 
+
 ---
 
 **Last Updated**: January 2025
