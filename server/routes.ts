@@ -43,6 +43,11 @@ const asyncHandler = (fn: Function) => (req: Request, res: Response, next: Funct
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for Railway
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // Auth routes
   app.post('/api/auth/login', asyncHandler(async (req, res) => {
     const { username, password } = req.body;
