@@ -906,7 +906,7 @@ Please ensure that you or an authorized representative is present during the ins
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
         fileSize: req.file.size,
-        fileData: req.file.buffer,
+        fileData: req.file.buffer.toString('base64'),
         documentType,
         description: description || null,
         uploadedBy: (req as any).user?.id || null, // Will be set by auth middleware when implemented
@@ -956,8 +956,9 @@ Please ensure that you or an authorized representative is present during the ins
       res.setHeader('Content-Length', document.fileSize.toString());
       res.setHeader('Content-Disposition', `attachment; filename="${document.originalName}"`);
 
-      // Send the binary data
-      res.send(document.fileData);
+      // Convert base64 string back to binary data and send
+      const binaryData = Buffer.from(document.fileData, 'base64');
+      res.send(binaryData);
     } catch (error: any) {
       console.error('Document download error:', error);
       res.status(500).json({ message: 'Failed to download document' });
