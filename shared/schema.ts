@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, bytea, real } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -73,6 +73,18 @@ export const inspections = pgTable("inspections", {
   visitDate: timestamp("visit_date"),
   notes: text("notes"),
   decision: text("decision"), // 'approved', 'rejected', null if not decided yet
+  // GPS location tracking
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  locationAccuracy: real("location_accuracy"), // GPS accuracy in meters
+  locationTimestamp: timestamp("location_timestamp"),
+  // Digital signature
+  digitalSignature: text("digital_signature"), // Base64 encoded signature image
+  signedAt: timestamp("signed_at"),
+  // Inspection status workflow
+  status: text("status").notNull().default("scheduled"), // 'scheduled', 'in_progress', 'completed', 'cancelled'
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -108,6 +120,37 @@ export const payments = pgTable("payments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Documents model - for storing files in PostgreSQL
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").references(() => applications.id),
+  inspectionId: integer("inspection_id").references(() => inspections.id),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  fileData: bytea("file_data").notNull(), // Binary data stored in PostgreSQL
+  documentType: text("document_type").notNull(), // 'business_license', 'floor_plan', 'inspection_photo', 'supplier_certificate', 'additional_document'
+  description: text("description"), // Optional description/caption
+  uploadedBy: integer("uploaded_by").references(() => users.id), // User who uploaded the file
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Inspection photos model - for inspection evidence photos
+export const inspectionPhotos = pgTable("inspection_photos", {
+  id: serial("id").primaryKey(),
+  inspectionId: integer("inspection_id").notNull().references(() => inspections.id),
+  documentId: integer("document_id").notNull().references(() => documents.id),
+  photoType: text("photo_type").notNull(), // 'facility_exterior', 'kitchen_area', 'storage_area', 'equipment', 'documentation', 'violation', 'other'
+  caption: text("caption"),
+  // GPS coordinates for where the photo was taken
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  locationAccuracy: real("location_accuracy"),
+  takenAt: timestamp("taken_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Audit log model
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
@@ -128,6 +171,8 @@ export const insertCertificateSchema = createInsertSchema(certificates).omit({ i
 export const insertInspectionSchema = createInsertSchema(inspections).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDocumentSchema = createInsertSchema(documents).omit({ id: true, createdAt: true });
+export const insertInspectionPhotoSchema = createInsertSchema(inspectionPhotos).omit({ id: true, createdAt: true, takenAt: true });
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
 
 // Define relations
@@ -136,6 +181,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   inspections: many(inspections),
   feedback: many(feedback),
   auditLogs: many(auditLogs),
+  documents: many(documents),
 }));
 
 export const storesRelations = relations(stores, ({ many }) => ({
@@ -152,6 +198,7 @@ export const applicationsRelations = relations(applications, ({ one, many }) => 
   certificates: many(certificates),
   inspections: many(inspections),
   payments: many(payments),
+  documents: many(documents),
 }));
 
 export const certificatesRelations = relations(certificates, ({ one }) => ({
@@ -169,7 +216,7 @@ export const certificatesRelations = relations(certificates, ({ one }) => ({
   }),
 }));
 
-export const inspectionsRelations = relations(inspections, ({ one }) => ({
+export const inspectionsRelations = relations(inspections, ({ one, many }) => ({
   application: one(applications, {
     fields: [inspections.applicationId],
     references: [applications.id],
@@ -178,6 +225,8 @@ export const inspectionsRelations = relations(inspections, ({ one }) => ({
     fields: [inspections.inspectorId],
     references: [users.id],
   }),
+  documents: many(documents),
+  photos: many(inspectionPhotos),
 }));
 
 export const feedbackRelations = relations(feedback, ({ one }) => ({
@@ -195,6 +244,32 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   application: one(applications, {
     fields: [payments.applicationId],
     references: [applications.id],
+  }),
+}));
+
+export const documentsRelations = relations(documents, ({ one }) => ({
+  application: one(applications, {
+    fields: [documents.applicationId],
+    references: [applications.id],
+  }),
+  inspection: one(inspections, {
+    fields: [documents.inspectionId],
+    references: [inspections.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [documents.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+export const inspectionPhotosRelations = relations(inspectionPhotos, ({ one }) => ({
+  inspection: one(inspections, {
+    fields: [inspectionPhotos.inspectionId],
+    references: [inspections.id],
+  }),
+  document: one(documents, {
+    fields: [inspectionPhotos.documentId],
+    references: [documents.id],
   }),
 }));
 
@@ -226,6 +301,12 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+
+export type InspectionPhoto = typeof inspectionPhotos.$inferSelect;
+export type InsertInspectionPhoto = z.infer<typeof insertInspectionPhotoSchema>;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;

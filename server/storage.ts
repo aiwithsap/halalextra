@@ -6,6 +6,8 @@ import {
   inspections, type Inspection, type InsertInspection,
   feedback as feedbackTable, type Feedback, type InsertFeedback,
   payments, type Payment, type InsertPayment,
+  documents, type Document, type InsertDocument,
+  inspectionPhotos, type InspectionPhoto, type InsertInspectionPhoto,
   auditLogs, type AuditLog, type InsertAuditLog
 } from "@shared/schema";
 import { generateCertificateNumber } from "./utils";
@@ -60,6 +62,20 @@ export interface IStorage {
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: number, status: string, metadata?: any): Promise<Payment>;
   
+  // Document operations
+  getDocument(id: number): Promise<Document | undefined>;
+  getDocumentsByApplicationId(applicationId: number): Promise<Document[]>;
+  getDocumentsByInspectionId(inspectionId: number): Promise<Document[]>;
+  createDocument(document: InsertDocument): Promise<Document>;
+  updateDocument(id: number, document: Partial<InsertDocument>): Promise<Document>;
+  deleteDocument(id: number): Promise<boolean>;
+  
+  // Inspection photo operations
+  getInspectionPhoto(id: number): Promise<InspectionPhoto | undefined>;
+  getInspectionPhotosByInspectionId(inspectionId: number): Promise<InspectionPhoto[]>;
+  createInspectionPhoto(photo: InsertInspectionPhoto): Promise<InspectionPhoto>;
+  deleteInspectionPhoto(id: number): Promise<boolean>;
+  
   // Audit log operations
   createAuditLog(auditLog: InsertAuditLog): Promise<AuditLog>;
   getAuditLogs(entityType: string, entityId: number): Promise<AuditLog[]>;
@@ -73,6 +89,8 @@ export class MemStorage implements IStorage {
   private inspections: Map<number, Inspection>;
   private feedbacks: Map<number, Feedback>;
   private payments: Map<number, Payment>;
+  private documents: Map<number, Document>;
+  private inspectionPhotos: Map<number, InspectionPhoto>;
   private auditLogs: Map<number, AuditLog>;
   
   private userIdCounter: number = 1;
@@ -82,6 +100,8 @@ export class MemStorage implements IStorage {
   private inspectionIdCounter: number = 1;
   private feedbackIdCounter: number = 1;
   private paymentIdCounter: number = 1;
+  private documentIdCounter: number = 1;
+  private inspectionPhotoIdCounter: number = 1;
   private auditLogIdCounter: number = 1;
 
   constructor() {
@@ -92,6 +112,8 @@ export class MemStorage implements IStorage {
     this.inspections = new Map();
     this.feedbacks = new Map();
     this.payments = new Map();
+    this.documents = new Map();
+    this.inspectionPhotos = new Map();
     this.auditLogs = new Map();
     
     // Create default admin and inspector users - using plaintext for development
@@ -369,6 +391,74 @@ export class MemStorage implements IStorage {
     
     this.payments.set(id, updatedPayment);
     return updatedPayment;
+  }
+
+  // Document operations
+  async getDocument(id: number): Promise<Document | undefined> {
+    return this.documents.get(id);
+  }
+
+  async getDocumentsByApplicationId(applicationId: number): Promise<Document[]> {
+    return Array.from(this.documents.values()).filter(doc => 
+      doc.applicationId === applicationId
+    );
+  }
+
+  async getDocumentsByInspectionId(inspectionId: number): Promise<Document[]> {
+    return Array.from(this.documents.values()).filter(doc => 
+      doc.inspectionId === inspectionId
+    );
+  }
+
+  async createDocument(document: InsertDocument): Promise<Document> {
+    const id = this.documentIdCounter++;
+    const createdAt = new Date();
+    const newDocument: Document = { ...document, id, createdAt };
+    this.documents.set(id, newDocument);
+    return newDocument;
+  }
+
+  async updateDocument(id: number, document: Partial<InsertDocument>): Promise<Document> {
+    const existingDocument = this.documents.get(id);
+    if (!existingDocument) {
+      throw new Error(`Document with ID ${id} not found`);
+    }
+    
+    const updatedDocument: Document = { ...existingDocument, ...document };
+    this.documents.set(id, updatedDocument);
+    return updatedDocument;
+  }
+
+  async deleteDocument(id: number): Promise<boolean> {
+    return this.documents.delete(id);
+  }
+
+  // Inspection photo operations
+  async getInspectionPhoto(id: number): Promise<InspectionPhoto | undefined> {
+    return this.inspectionPhotos.get(id);
+  }
+
+  async getInspectionPhotosByInspectionId(inspectionId: number): Promise<InspectionPhoto[]> {
+    return Array.from(this.inspectionPhotos.values()).filter(photo => 
+      photo.inspectionId === inspectionId
+    );
+  }
+
+  async createInspectionPhoto(photo: InsertInspectionPhoto): Promise<InspectionPhoto> {
+    const id = this.inspectionPhotoIdCounter++;
+    const now = new Date();
+    const newPhoto: InspectionPhoto = { 
+      ...photo, 
+      id, 
+      takenAt: now,
+      createdAt: now 
+    };
+    this.inspectionPhotos.set(id, newPhoto);
+    return newPhoto;
+  }
+
+  async deleteInspectionPhoto(id: number): Promise<boolean> {
+    return this.inspectionPhotos.delete(id);
   }
 
   // Audit log operations
@@ -701,6 +791,70 @@ export class DatabaseStorage implements IStorage {
     }
     
     return payment;
+  }
+
+  // Document operations
+  async getDocument(id: number): Promise<Document | undefined> {
+    const [document] = await db.select().from(documents).where(eq(documents.id, id));
+    return document || undefined;
+  }
+
+  async getDocumentsByApplicationId(applicationId: number): Promise<Document[]> {
+    return await db.select().from(documents).where(eq(documents.applicationId, applicationId));
+  }
+
+  async getDocumentsByInspectionId(inspectionId: number): Promise<Document[]> {
+    return await db.select().from(documents).where(eq(documents.inspectionId, inspectionId));
+  }
+
+  async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    const [document] = await db
+      .insert(documents)
+      .values(insertDocument)
+      .returning();
+    return document;
+  }
+
+  async updateDocument(id: number, documentData: Partial<InsertDocument>): Promise<Document> {
+    const [document] = await db
+      .update(documents)
+      .set(documentData)
+      .where(eq(documents.id, id))
+      .returning();
+    
+    if (!document) {
+      throw new Error(`Document with ID ${id} not found`);
+    }
+    
+    return document;
+  }
+
+  async deleteDocument(id: number): Promise<boolean> {
+    const result = await db.delete(documents).where(eq(documents.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Inspection photo operations
+  async getInspectionPhoto(id: number): Promise<InspectionPhoto | undefined> {
+    const [photo] = await db.select().from(inspectionPhotos).where(eq(inspectionPhotos.id, id));
+    return photo || undefined;
+  }
+
+  async getInspectionPhotosByInspectionId(inspectionId: number): Promise<InspectionPhoto[]> {
+    return await db.select().from(inspectionPhotos).where(eq(inspectionPhotos.inspectionId, inspectionId));
+  }
+
+  async createInspectionPhoto(insertPhoto: InsertInspectionPhoto): Promise<InspectionPhoto> {
+    const [photo] = await db
+      .insert(inspectionPhotos)
+      .values(insertPhoto)
+      .returning();
+    return photo;
+  }
+
+  async deleteInspectionPhoto(id: number): Promise<boolean> {
+    const result = await db.delete(inspectionPhotos).where(eq(inspectionPhotos.id, id));
+    return result.rowCount > 0;
   }
 
   // Audit log operations

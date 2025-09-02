@@ -877,6 +877,180 @@ Please ensure that you or an authorized representative is present during the ins
     }
   }));
 
+  // Document upload/download endpoints
+  app.post('/api/documents/upload', upload.single('file'), asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file provided' });
+    }
+
+    try {
+      const { applicationId, inspectionId, documentType, description } = req.body;
+      
+      if (!applicationId && !inspectionId) {
+        return res.status(400).json({ message: 'Either applicationId or inspectionId is required' });
+      }
+      
+      if (!documentType) {
+        return res.status(400).json({ message: 'Document type is required' });
+      }
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const filename = `${timestamp}-${req.file.originalname}`;
+
+      // Create document record with file data
+      const document = await storage.createDocument({
+        applicationId: applicationId ? parseInt(applicationId) : null,
+        inspectionId: inspectionId ? parseInt(inspectionId) : null,
+        filename,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        fileData: req.file.buffer,
+        documentType,
+        description: description || null,
+        uploadedBy: (req as any).user?.id || null, // Will be set by auth middleware when implemented
+      });
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: (req as any).user?.id || null,
+        action: 'DOCUMENT_UPLOADED',
+        entity: 'document',
+        entityId: document.id,
+        details: {
+          filename: document.filename,
+          originalName: document.originalName,
+          fileSize: document.fileSize,
+          documentType: document.documentType
+        },
+        ipAddress: req.ip
+      });
+
+      res.json({
+        id: document.id,
+        filename: document.filename,
+        originalName: document.originalName,
+        fileSize: document.fileSize,
+        documentType: document.documentType,
+        createdAt: document.createdAt
+      });
+    } catch (error: any) {
+      console.error('Document upload error:', error);
+      res.status(500).json({ message: 'Failed to upload document' });
+    }
+  }));
+
+  // Download document
+  app.get('/api/documents/:id/download', asyncHandler(async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const document = await storage.getDocument(documentId);
+
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+
+      // Set appropriate headers
+      res.setHeader('Content-Type', document.mimeType);
+      res.setHeader('Content-Length', document.fileSize.toString());
+      res.setHeader('Content-Disposition', `attachment; filename="${document.originalName}"`);
+
+      // Send the binary data
+      res.send(document.fileData);
+    } catch (error: any) {
+      console.error('Document download error:', error);
+      res.status(500).json({ message: 'Failed to download document' });
+    }
+  }));
+
+  // Get document metadata
+  app.get('/api/documents/:id', asyncHandler(async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const document = await storage.getDocument(documentId);
+
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+
+      // Return metadata without binary data
+      const { fileData, ...documentMetadata } = document;
+      res.json(documentMetadata);
+    } catch (error: any) {
+      console.error('Get document metadata error:', error);
+      res.status(500).json({ message: 'Failed to get document metadata' });
+    }
+  }));
+
+  // Get documents by application ID
+  app.get('/api/applications/:applicationId/documents', asyncHandler(async (req, res) => {
+    try {
+      const applicationId = parseInt(req.params.applicationId);
+      const documents = await storage.getDocumentsByApplicationId(applicationId);
+
+      // Return metadata without binary data
+      const documentMetadata = documents.map(({ fileData, ...doc }) => doc);
+      res.json(documentMetadata);
+    } catch (error: any) {
+      console.error('Get application documents error:', error);
+      res.status(500).json({ message: 'Failed to get application documents' });
+    }
+  }));
+
+  // Get documents by inspection ID
+  app.get('/api/inspections/:inspectionId/documents', asyncHandler(async (req, res) => {
+    try {
+      const inspectionId = parseInt(req.params.inspectionId);
+      const documents = await storage.getDocumentsByInspectionId(inspectionId);
+
+      // Return metadata without binary data
+      const documentMetadata = documents.map(({ fileData, ...doc }) => doc);
+      res.json(documentMetadata);
+    } catch (error: any) {
+      console.error('Get inspection documents error:', error);
+      res.status(500).json({ message: 'Failed to get inspection documents' });
+    }
+  }));
+
+  // Delete document
+  app.delete('/api/documents/:id', asyncHandler(async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      
+      // Get document info before deletion for audit log
+      const document = await storage.getDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+
+      const deleted = await storage.deleteDocument(documentId);
+      
+      if (deleted) {
+        // Create audit log
+        await storage.createAuditLog({
+          userId: (req as any).user?.id || null,
+          action: 'DOCUMENT_DELETED',
+          entity: 'document',
+          entityId: documentId,
+          details: {
+            filename: document.filename,
+            originalName: document.originalName,
+            documentType: document.documentType
+          },
+          ipAddress: req.ip
+        });
+
+        res.json({ message: 'Document deleted successfully' });
+      } else {
+        res.status(404).json({ message: 'Document not found' });
+      }
+    } catch (error: any) {
+      console.error('Document deletion error:', error);
+      res.status(500).json({ message: 'Failed to delete document' });
+    }
+  }));
+
   // Stripe webhook handler
   app.post('/api/webhooks/stripe', asyncHandler(async (req, res) => {
     const sig = req.headers['stripe-signature'] as string;
