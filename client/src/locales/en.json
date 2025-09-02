@@ -3,6 +3,7 @@
     "back": "Back",
     "next": "Next",
     "submit": "Submit",
+    "continue": "Continue",
     "cancel": "Cancel",
     "search": "Search",
     "loading": "Loading...",
@@ -17,7 +18,8 @@
     "add": "Add",
     "remove": "Remove",
     "home": "Home",
-    "language": "Language"
+    "language": "Language",
+    "submitting": "Submitting..."
   },
   "header": {
     "navigation": {
@@ -127,6 +129,7 @@
       "step2Short": "Operations",
       "step3Short": "Documents", 
       "step4Short": "Review",
+      "step5Short": "Payment",
       "successTitle": "Application Submitted!",
       "successMessage": "Your Halal certification application has been successfully submitted. We will contact you shortly.",
       "errorTitle": "Submission Failed",
@@ -611,6 +614,28 @@
       "backHome": "Go Back Home"
     }
   },
+  "payment": {
+    "title": "Payment",
+    "certificationFee": "Halal Certification Fee",
+    "feeDescription": "One-time application and certification fee",
+    "applicationSummary": "Application Summary",
+    "cardDetails": "Card Details",
+    "securePayment": "Your payment information is secure and encrypted",
+    "sslEncrypted": "SSL Encrypted",
+    "sslDescription": "256-bit SSL encryption",
+    "stripeSecure": "Stripe Secure",
+    "stripeDescription": "PCI compliant payments",
+    "instantConfirmation": "Instant Confirmation",
+    "confirmationDescription": "Immediate email receipt",
+    "processing": "Processing Payment...",
+    "payNow": "Pay {amount}",
+    "successTitle": "Payment Successful!",
+    "successMessage": "Your payment has been processed successfully.",
+    "errorTitle": "Payment Failed",
+    "paymentError": "There was an error processing your payment. Please try again.",
+    "paymentIntentError": "Failed to initialize payment. Please refresh and try again.",
+    "stripeNotLoadedError": "Payment system not loaded. Please refresh the page."
+  },
   "validation": {
     "required": "This field is required",
     "email": "Please enter a valid email address",
@@ -622,6 +647,7 @@
     "invalidPhone": "Please enter a valid phone number",
     "invalidDate": "Please enter a valid date",
     "invalidFile": "Please upload a valid file",
-    "fileSize": "File size cannot exceed {size}MB"
+    "fileSize": "File size cannot exceed {size}MB",
+    "acceptTerms": "You must accept the terms and conditions"
   }
 }

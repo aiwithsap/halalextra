@@ -7,12 +7,18 @@ import { generateQRCode } from "./utils";
 import multer from "multer";
 import path from "path";
 import { z } from "zod";
+import Stripe from "stripe";
 import { 
   insertStoreSchema, 
   insertApplicationSchema, 
   insertFeedbackSchema, 
   insertInspectionSchema 
 } from "@shared/schema";
+
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2024-12-18.acacia',
+});
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -47,6 +53,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   });
+
+  // Stripe payment intent creation
+  app.post('/api/create-payment-intent', asyncHandler(async (req, res) => {
+    try {
+      const { amount, currency = 'aud', metadata } = req.body;
+      
+      if (!amount || amount < 50) {
+        return res.status(400).json({ message: 'Invalid amount' });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: currency,
+        metadata: metadata || {},
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error: any) {
+      console.error('Payment intent creation error:', error);
+      res.status(400).json({ message: error.message || 'Failed to create payment intent' });
+    }
+  }));
 
   // Auth routes
   app.post('/api/auth/login', asyncHandler(async (req, res) => {
@@ -171,6 +205,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         products: JSON.parse(req.body.products || '[]'),
         suppliers: JSON.parse(req.body.suppliers || '[]')
       };
+
+      // Validate payment if paymentIntentId is provided
+      if (applicationData.paymentIntentId) {
+        try {
+          const paymentIntent = await stripe.paymentIntents.retrieve(applicationData.paymentIntentId);
+          if (paymentIntent.status !== 'succeeded') {
+            return res.status(400).json({ message: 'Payment not completed' });
+          }
+        } catch (error) {
+          console.error('Payment verification error:', error);
+          return res.status(400).json({ message: 'Payment verification failed' });
+        }
+      }
       
       // Create or retrieve store
       const storeData = {
@@ -789,6 +836,73 @@ Please ensure that you or an authorized representative is present during the ins
       console.error('Get store feedback error:', error);
       res.status(500).json({ message: 'An error occurred' });
     }
+  }));
+
+  // Stripe webhook handler
+  app.post('/api/webhooks/stripe', asyncHandler(async (req, res) => {
+    const sig = req.headers['stripe-signature'] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('Stripe webhook secret not configured');
+      return res.status(400).json({ message: 'Webhook secret not configured' });
+    }
+
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).json({ message: 'Webhook signature verification failed' });
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log('Payment succeeded:', paymentIntent.id);
+        
+        // Create audit log for successful payment
+        await storage.createAuditLog({
+          userId: null,
+          action: 'PAYMENT_SUCCESS',
+          entity: 'payment',
+          entityId: paymentIntent.id,
+          details: {
+            amount: paymentIntent.amount,
+            currency: paymentIntent.currency,
+            metadata: paymentIntent.metadata
+          },
+          ipAddress: req.ip
+        });
+        break;
+
+      case 'payment_intent.payment_failed':
+        const failedPayment = event.data.object as Stripe.PaymentIntent;
+        console.log('Payment failed:', failedPayment.id);
+        
+        // Create audit log for failed payment
+        await storage.createAuditLog({
+          userId: null,
+          action: 'PAYMENT_FAILED',
+          entity: 'payment',
+          entityId: failedPayment.id,
+          details: {
+            amount: failedPayment.amount,
+            currency: failedPayment.currency,
+            metadata: failedPayment.metadata,
+            error: failedPayment.last_payment_error
+          },
+          ipAddress: req.ip
+        });
+        break;
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    res.json({ received: true });
   }));
   
   // Create HTTP server

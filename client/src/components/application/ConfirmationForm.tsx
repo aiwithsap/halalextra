@@ -11,7 +11,7 @@ interface ConfirmationFormProps {
   formData: ApplicationFormData;
   updateFormData: (data: Partial<ApplicationFormData>) => void;
   prevStep: () => void;
-  handleSubmit: () => void;
+  nextStep: () => void;
   isSubmitting: boolean;
 }
 
@@ -19,7 +19,7 @@ const ConfirmationForm: React.FC<ConfirmationFormProps> = ({
   formData, 
   updateFormData, 
   prevStep,
-  handleSubmit,
+  nextStep,
   isSubmitting
 }) => {
   const { t } = useTranslation();
@@ -52,7 +52,7 @@ const ConfirmationForm: React.FC<ConfirmationFormProps> = ({
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      handleSubmit();
+      nextStep();
     }
   };
 
@@ -229,7 +229,7 @@ const ConfirmationForm: React.FC<ConfirmationFormProps> = ({
             </>
           ) : (
             <>
-              {t("common.submit")} <i className="ri-check-line ml-1"></i>
+              {t("common.continue")} <i className="ri-arrow-right-line ml-1"></i>
             </>
           )}
         </Button>
