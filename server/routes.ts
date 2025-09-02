@@ -3,7 +3,16 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { authMiddleware, requireRole } from "./auth";
 import { sendEmail } from "./email";
-import { generateQRCode } from "./utils";
+import { generateQRCode, generateCertificateNumber } from "./utils";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
+import { 
+  inspections, 
+  applications, 
+  stores, 
+  documents, 
+  inspectionPhotos 
+} from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import { z } from "zod";
@@ -407,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (status === 'approved') {
         // Generate QR code (in a real app, this would be a unique URL)
         const certificateNumber = `HAL-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-        const qrCodeUrl = await generateQRCode(`https://halalcert.org/cert/${certificateNumber}`);
+        const qrCodeUrl = await generateQRCode(`${process.env.CLIENT_URL || 'http://localhost:3000'}/verify/${certificateNumber}`);
         
         // Calculate expiry date (1 year from now)
         const expiryDate = new Date();
@@ -563,6 +572,62 @@ Please ensure that you or an authorized representative is present during the ins
   }));
   
   // Certificate routes
+  
+  // Public certificate verification by certificate number (no auth required)
+  app.get('/api/verify/:certificateNumber', asyncHandler(async (req, res) => {
+    try {
+      const { certificateNumber } = req.params;
+      
+      // Get certificate with store information
+      const certificateWithStore = await storage.getCertificateByNumber(certificateNumber);
+      
+      if (!certificateWithStore) {
+        return res.status(404).json({ 
+          message: 'Certificate not found',
+          valid: false 
+        });
+      }
+      
+      const { store, ...certificate } = certificateWithStore;
+      
+      // Check if certificate is expired
+      const isExpired = new Date() > new Date(certificate.expiryDate);
+      const isValid = certificate.status === 'active' && !isExpired;
+      
+      // Calculate days until expiry
+      const daysUntilExpiry = Math.ceil((new Date(certificate.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      
+      res.json({
+        valid: isValid,
+        certificate: {
+          certificateNumber: certificate.certificateNumber,
+          status: certificate.status,
+          issuedDate: certificate.issuedDate,
+          expiryDate: certificate.expiryDate,
+          isExpired,
+          daysUntilExpiry: isExpired ? 0 : daysUntilExpiry,
+          qrCodeUrl: certificate.qrCodeUrl
+        },
+        store: {
+          name: store.name,
+          address: store.address,
+          city: store.city,
+          state: store.state,
+          postcode: store.postcode,
+          businessType: store.businessType
+        },
+        verificationDate: new Date().toISOString()
+      });
+      
+    } catch (error: any) {
+      console.error('Certificate verification error:', error);
+      res.status(500).json({ 
+        message: 'Failed to verify certificate',
+        valid: false 
+      });
+    }
+  }));
+
   app.get('/api/certificates/:id', asyncHandler(async (req, res) => {
     try {
       const certificate = await storage.getCertificateByNumber(req.params.id);
@@ -751,7 +816,7 @@ Please ensure that you or an authorized representative is present during the ins
         oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
         
         const certificateNumber = `HAL-${new Date().getFullYear()}-${id.toString().padStart(5, '0')}`;
-        const qrCodeUrl = await generateQRCode(`https://halalcert.org/verify/${id}`);
+        const qrCodeUrl = await generateQRCode(`${process.env.CLIENT_URL || 'http://localhost:3000'}/verify/${certificateNumber}`);
         
         await storage.createCertificate({
           storeId: application.storeId,
@@ -1049,6 +1114,259 @@ Please ensure that you or an authorized representative is present during the ins
     } catch (error: any) {
       console.error('Document deletion error:', error);
       res.status(500).json({ message: 'Failed to delete document' });
+    }
+  }));
+
+  // Get inspections assigned to inspector
+  app.get('/api/inspections/assigned', authMiddleware, requireRole(['inspector']), asyncHandler(async (req, res) => {
+    try {
+      // @ts-ignore - user is added by authMiddleware
+      const inspectorId = req.user.userId;
+      
+      // Get all inspections for this inspector
+      const inspections = await db
+        .select({
+          inspection: inspections,
+          application: applications,
+          store: stores
+        })
+        .from(inspections)
+        .innerJoin(applications, eq(inspections.applicationId, applications.id))
+        .innerJoin(stores, eq(applications.storeId, stores.id))
+        .where(eq(inspections.inspectorId, inspectorId))
+        .orderBy(desc(inspections.createdAt));
+
+      const result = inspections.map(({ inspection, application, store }) => ({
+        ...inspection,
+        application: {
+          ...application,
+          store
+        }
+      }));
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Get assigned inspections error:', error);
+      res.status(500).json({ message: 'Failed to get assigned inspections' });
+    }
+  }));
+
+  // Start inspection (update status and location)
+  app.post('/api/inspections/:id/start', authMiddleware, requireRole(['inspector']), asyncHandler(async (req, res) => {
+    try {
+      const inspectionId = parseInt(req.params.id);
+      const { latitude, longitude, locationAccuracy } = req.body;
+      
+      const updatedInspection = await storage.updateInspection(inspectionId, {
+        status: 'in_progress',
+        startTime: new Date(),
+        latitude,
+        longitude,
+        locationAccuracy,
+        locationTimestamp: new Date()
+      });
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: (req as any).user?.userId || null,
+        action: 'INSPECTION_STARTED',
+        entity: 'inspection',
+        entityId: inspectionId,
+        details: {
+          latitude,
+          longitude,
+          locationAccuracy,
+          timestamp: new Date().toISOString()
+        },
+        ipAddress: req.ip
+      });
+
+      res.json(updatedInspection);
+    } catch (error: any) {
+      console.error('Start inspection error:', error);
+      res.status(500).json({ message: 'Failed to start inspection' });
+    }
+  }));
+
+  // Complete inspection with decision and signature
+  app.post('/api/inspections/:id/complete', authMiddleware, requireRole(['inspector']), asyncHandler(async (req, res) => {
+    try {
+      const inspectionId = parseInt(req.params.id);
+      const { decision, notes, digitalSignature } = req.body;
+      
+      const updatedInspection = await storage.updateInspection(inspectionId, {
+        status: 'completed',
+        endTime: new Date(),
+        decision,
+        notes,
+        digitalSignature,
+        signedAt: digitalSignature ? new Date() : null
+      });
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: (req as any).user?.userId || null,
+        action: 'INSPECTION_COMPLETED',
+        entity: 'inspection',
+        entityId: inspectionId,
+        details: {
+          decision,
+          hasSignature: !!digitalSignature,
+          timestamp: new Date().toISOString()
+        },
+        ipAddress: req.ip
+      });
+
+      // If approved, automatically create certificate
+      if (decision === 'approved') {
+        const inspection = await storage.getInspection(inspectionId);
+        if (inspection) {
+          const application = await storage.getApplication(inspection.applicationId);
+          if (application) {
+            const store = await storage.getStore(application.storeId);
+            if (store) {
+              // Generate certificate
+              const certificateNumber = generateCertificateNumber();
+              const expiryDate = new Date();
+              expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year validity
+
+              const qrCodeUrl = await generateQRCode(`${process.env.CLIENT_URL || 'http://localhost:3000'}/verify/${certificateNumber}`);
+
+              const certificate = await storage.createCertificate({
+                certificateNumber,
+                storeId: store.id,
+                applicationId: application.id,
+                status: 'active',
+                issuedBy: (req as any).user?.userId || null,
+                expiryDate,
+                qrCodeUrl
+              });
+
+              // Send approval email with certificate
+              await sendEmail({
+                to: store.ownerEmail,
+                subject: 'Halal Certification Approved - Certificate Generated',
+                text: `Dear ${store.ownerName},
+
+Congratulations! Your application for Halal Certification has been approved after inspection. 
+
+Your certificate details:
+- Certificate Number: ${certificateNumber}
+- Valid Until: ${expiryDate.toDateString()}
+- Verification URL: ${process.env.CLIENT_URL || 'http://localhost:3000'}/verify/${certificateNumber}
+
+You can view and download your certificate from your account or use the verification URL above.
+
+Regards,
+Halal Certification Authority`
+              });
+
+              // Update application status
+              await storage.updateApplicationStatus(application.id, 'approved', `Certificate ${certificateNumber} generated automatically after inspection approval.`);
+            }
+          }
+        }
+      }
+
+      res.json(updatedInspection);
+    } catch (error: any) {
+      console.error('Complete inspection error:', error);
+      res.status(500).json({ message: 'Failed to complete inspection' });
+    }
+  }));
+
+  // Upload inspection photo
+  app.post('/api/inspections/:id/photos', upload.single('photo'), authMiddleware, requireRole(['inspector']), asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No photo provided' });
+    }
+
+    try {
+      const inspectionId = parseInt(req.params.id);
+      const { photoType, caption, latitude, longitude, locationAccuracy } = req.body;
+      
+      // First create document record for the photo
+      const document = await storage.createDocument({
+        inspectionId,
+        applicationId: null,
+        filename: `inspection-${inspectionId}-${Date.now()}-${req.file.originalname}`,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        fileData: req.file.buffer.toString('base64'),
+        documentType: 'inspection_photo',
+        description: caption || null,
+        uploadedBy: (req as any).user?.userId || null
+      });
+
+      // Create inspection photo record
+      const inspectionPhoto = await storage.createInspectionPhoto({
+        inspectionId,
+        documentId: document.id,
+        photoType: photoType || 'other',
+        caption: caption || null,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
+        locationAccuracy: locationAccuracy ? parseFloat(locationAccuracy) : null
+      });
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: (req as any).user?.userId || null,
+        action: 'INSPECTION_PHOTO_UPLOADED',
+        entity: 'inspection',
+        entityId: inspectionId,
+        details: {
+          photoType,
+          filename: document.filename,
+          latitude,
+          longitude
+        },
+        ipAddress: req.ip
+      });
+
+      res.json({
+        ...inspectionPhoto,
+        document
+      });
+    } catch (error: any) {
+      console.error('Inspection photo upload error:', error);
+      res.status(500).json({ message: 'Failed to upload inspection photo' });
+    }
+  }));
+
+  // Get inspection photos
+  app.get('/api/inspections/:id/photos', asyncHandler(async (req, res) => {
+    try {
+      const inspectionId = parseInt(req.params.id);
+      
+      const photos = await db
+        .select({
+          photo: inspectionPhotos,
+          document: documents
+        })
+        .from(inspectionPhotos)
+        .innerJoin(documents, eq(inspectionPhotos.documentId, documents.id))
+        .where(eq(inspectionPhotos.inspectionId, inspectionId))
+        .orderBy(desc(inspectionPhotos.createdAt));
+
+      const result = photos.map(({ photo, document }) => ({
+        ...photo,
+        document: {
+          id: document.id,
+          filename: document.filename,
+          originalName: document.originalName,
+          mimeType: document.mimeType,
+          fileSize: document.fileSize,
+          documentType: document.documentType,
+          description: document.description
+        }
+      }));
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Get inspection photos error:', error);
+      res.status(500).json({ message: 'Failed to get inspection photos' });
     }
   }));
 

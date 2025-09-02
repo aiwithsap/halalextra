@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -19,17 +19,21 @@ interface Certificate {
   expiryDate: string;
 }
 
-const VerificationSection = () => {
+interface VerificationSectionProps {
+  initialCertificateNumber?: string;
+}
+
+const VerificationSection = ({ initialCertificateNumber }: VerificationSectionProps) => {
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialCertificateNumber || "");
   const [isScanning, setIsScanning] = useState(false);
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
+  const performSearch = async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
       toast({
         title: t("verify.emptySearchError"),
         description: t("verify.enterSearchTerm"),
@@ -40,11 +44,20 @@ const VerificationSection = () => {
 
     setIsLoading(true);
     try {
-      const response = await apiRequest("GET", `/api/certificates/search?q=${encodeURIComponent(searchQuery)}`, undefined);
-      const data = await response.json();
+      // Use the new public verification endpoint
+      const response = await fetch(`/api/verify/${encodeURIComponent(searchTerm)}`);
       
-      if (data && data.certificate) {
-        setCertificate(data.certificate);
+      if (response.ok) {
+        const data = await response.json();
+        setCertificate({
+          id: data.certificate.id,
+          storeName: data.certificate.businessName,
+          storeAddress: data.certificate.businessAddress,
+          status: data.certificate.status,
+          certificateNumber: data.certificate.certificateNumber,
+          issuedDate: data.certificate.issuedAt,
+          expiryDate: data.certificate.expiresAt
+        });
       } else {
         setCertificate(null);
         toast({
@@ -64,40 +77,28 @@ const VerificationSection = () => {
     }
   };
 
+  // Auto-search when there's an initial certificate number
+  useEffect(() => {
+    if (initialCertificateNumber) {
+      performSearch(initialCertificateNumber);
+    }
+  }, [initialCertificateNumber, t, toast]);
+
+  const handleSearch = async () => {
+    await performSearch(searchQuery);
+  };
+
   const handleScanResult = async (result: string) => {
     setIsScanning(false);
     if (result) {
-      // Extract certificate ID from the QR code URL
-      const urlPattern = /\/cert\/([a-zA-Z0-9-]+)/;
+      // Extract certificate number from the QR code URL
+      const urlPattern = /\/verify\/([a-zA-Z0-9-]+)/;
       const match = result.match(urlPattern);
       
       if (match && match[1]) {
-        const certificateId = match[1];
-        
-        setIsLoading(true);
-        try {
-          const response = await apiRequest("GET", `/api/certificates/${certificateId}`, undefined);
-          const data = await response.json();
-          
-          if (data && data.certificate) {
-            setCertificate(data.certificate);
-          } else {
-            setCertificate(null);
-            toast({
-              title: t("verify.notFound"),
-              description: t("verify.invalidQR"),
-              variant: "destructive",
-            });
-          }
-        } catch (error) {
-          toast({
-            title: t("common.error"),
-            description: t("verify.verificationError"),
-            variant: "destructive",
-          });
-        } finally {
-          setIsLoading(false);
-        }
+        const certificateNumber = match[1];
+        setSearchQuery(certificateNumber); // Update search query to show what we're verifying
+        await performSearch(certificateNumber);
       } else {
         toast({
           title: t("verify.invalidFormat"),

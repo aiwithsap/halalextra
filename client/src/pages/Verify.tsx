@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet";
+import { useRoute } from "wouter";
 import VerificationSection from "@/components/home/VerificationSection";
 import GeometricPattern from "@/components/shared/GeometricPattern";
 
 const Verify = () => {
   const { t } = useTranslation();
+  const [, params] = useRoute("/verify/:certificateNumber");
 
   return (
     <>
@@ -26,7 +28,7 @@ const Verify = () => {
         </div>
       </div>
       
-      <VerificationSection />
+      <VerificationSection initialCertificateNumber={params?.certificateNumber} />
     </>
   );
 };

@@ -63,6 +63,7 @@ function AppRouter() {
       <Route path="/contact" component={Contact} />
       <Route path="/apply" component={Apply} />
       <Route path="/verify" component={Verify} />
+      <Route path="/verify/:certificateNumber" component={Verify} />
       <Route path="/certificate/:id" component={Certificate} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
