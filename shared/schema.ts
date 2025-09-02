@@ -45,6 +45,7 @@ export const applications = pgTable("applications", {
   floorPlanUrl: text("floor_plan_url"),
   supplierCertificatesUrl: text("supplier_certificates_url"),
   additionalDocumentsUrl: text("additional_documents_url"),
+  paymentIntentId: text("payment_intent_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

@@ -270,7 +270,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessLicenseUrl,
         floorPlanUrl,
         supplierCertificatesUrl,
-        additionalDocumentsUrl
+        additionalDocumentsUrl,
+        paymentIntentId: applicationData.paymentIntentId
       });
       
       // Send confirmation email

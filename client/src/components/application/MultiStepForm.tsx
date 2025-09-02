@@ -86,14 +86,17 @@ const MultiStepForm = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (paymentIntentId?: string) => {
     setIsSubmitting(true);
     try {
+      // Use the passed paymentIntentId if provided, otherwise use formData
+      const finalFormData = paymentIntentId ? { ...formData, paymentIntentId } : formData;
+      
       // Create FormData object for file uploads
       const formDataObj = new FormData();
       
       // Add all text fields
-      Object.entries(formData).forEach(([key, value]) => {
+      Object.entries(finalFormData).forEach(([key, value]) => {
         if (key === 'suppliers') {
           formDataObj.append(key, JSON.stringify(value));
         } else if (key === 'products') {
@@ -274,7 +277,7 @@ const MultiStepForm = () => {
             prevStep={prevStep}
             onPaymentSuccess={(paymentIntentId: string) => {
               updateFormData({ paymentIntentId });
-              handleSubmit();
+              handleSubmit(paymentIntentId);
             }}
           />
         </div>

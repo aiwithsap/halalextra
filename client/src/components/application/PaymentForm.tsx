@@ -28,6 +28,9 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
   const [paymentAmount] = useState(100); // $1.00 AUD in cents
 
   useEffect(() => {
+    // Only create payment intent if we don't already have one
+    if (clientSecret) return;
+    
     // Create payment intent when component mounts
     const createPaymentIntent = async () => {
       try {
@@ -67,7 +70,7 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
     if (formData.businessName && formData.ownerEmail) {
       createPaymentIntent();
     }
-  }, [formData.businessName, formData.ownerEmail, paymentAmount, toast, t]);
+  }, [formData.businessName, formData.ownerEmail, paymentAmount, toast, t, clientSecret]);
 
   const handlePayment = async (event: React.FormEvent) => {
     event.preventDefault();
