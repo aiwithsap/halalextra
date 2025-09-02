@@ -91,6 +91,23 @@ export const feedback = pgTable("feedback", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Payment model
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  paymentIntentId: text("payment_intent_id").notNull().unique(),
+  applicationId: integer("application_id").references(() => applications.id),
+  amount: integer("amount").notNull(), // Amount in cents
+  currency: text("currency").notNull().default("aud"),
+  status: text("status").notNull(), // 'pending', 'succeeded', 'failed', 'canceled'
+  paymentMethod: text("payment_method"), // 'card', etc.
+  customerEmail: text("customer_email"),
+  customerName: text("customer_name"),
+  stripeCustomerId: text("stripe_customer_id"),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Audit log model
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
@@ -110,6 +127,7 @@ export const insertApplicationSchema = createInsertSchema(applications).omit({ i
 export const insertCertificateSchema = createInsertSchema(certificates).omit({ id: true, createdAt: true });
 export const insertInspectionSchema = createInsertSchema(inspections).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
 
 // Define relations
@@ -133,6 +151,7 @@ export const applicationsRelations = relations(applications, ({ one, many }) => 
   }),
   certificates: many(certificates),
   inspections: many(inspections),
+  payments: many(payments),
 }));
 
 export const certificatesRelations = relations(certificates, ({ one }) => ({
@@ -172,6 +191,13 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   }),
 }));
 
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  application: one(applications, {
+    fields: [payments.applicationId],
+    references: [applications.id],
+  }),
+}));
+
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   user: one(users, {
     fields: [auditLogs.userId],
@@ -197,6 +223,9 @@ export type InsertInspection = z.infer<typeof insertInspectionSchema>;
 
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;

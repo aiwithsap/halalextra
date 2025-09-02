@@ -207,12 +207,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Validate payment if paymentIntentId is provided
+      let paymentRecord = null;
       if (applicationData.paymentIntentId) {
         try {
           const paymentIntent = await stripe.paymentIntents.retrieve(applicationData.paymentIntentId);
           if (paymentIntent.status !== 'succeeded') {
             return res.status(400).json({ message: 'Payment not completed' });
           }
+
+          // Check if payment record already exists
+          paymentRecord = await storage.getPaymentByIntentId(applicationData.paymentIntentId);
         } catch (error) {
           console.error('Payment verification error:', error);
           return res.status(400).json({ message: 'Payment verification failed' });
@@ -273,6 +277,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalDocumentsUrl,
         paymentIntentId: applicationData.paymentIntentId
       });
+
+      // Create or update payment record if payment was made
+      if (applicationData.paymentIntentId) {
+        try {
+          const paymentIntent = await stripe.paymentIntents.retrieve(applicationData.paymentIntentId);
+          
+          if (paymentRecord) {
+            // Payment record exists (created by webhook), update with application ID and customer info
+            await storage.updatePaymentStatus(paymentRecord.id, paymentRecord.status, {
+              ...(paymentRecord.metadata || {}),
+              applicationId: application.id,
+              customerEmail: store.ownerEmail,
+              customerName: store.ownerName
+            });
+          } else {
+            // Create new payment record
+            await storage.createPayment({
+              paymentIntentId: applicationData.paymentIntentId,
+              applicationId: application.id,
+              amount: paymentIntent.amount,
+              currency: paymentIntent.currency,
+              status: paymentIntent.status,
+              paymentMethod: paymentIntent.payment_method_types[0] || null,
+              customerEmail: store.ownerEmail,
+              customerName: store.ownerName,
+              stripeCustomerId: paymentIntent.customer as string || null,
+              metadata: paymentIntent.metadata || {}
+            });
+          }
+        } catch (error) {
+          console.error('Error handling payment record:', error);
+          // Don't fail the application creation if payment recording fails
+        }
+      }
       
       // Send confirmation email
       await sendEmail({
@@ -864,6 +902,32 @@ Please ensure that you or an authorized representative is present during the ins
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log('Payment succeeded:', paymentIntent.id);
         
+        // Create or update payment record
+        try {
+          let payment = await storage.getPaymentByIntentId(paymentIntent.id);
+          
+          if (payment) {
+            // Update existing payment record
+            await storage.updatePaymentStatus(payment.id, 'succeeded', paymentIntent.metadata || {});
+          } else {
+            // Create new payment record (this handles webhook arriving before application submission)
+            await storage.createPayment({
+              paymentIntentId: paymentIntent.id,
+              applicationId: null, // Will be updated when application is submitted
+              amount: paymentIntent.amount,
+              currency: paymentIntent.currency,
+              status: 'succeeded',
+              paymentMethod: paymentIntent.payment_method_types[0] || null,
+              customerEmail: paymentIntent.receipt_email || null,
+              customerName: null, // Will be updated when application is submitted
+              stripeCustomerId: paymentIntent.customer as string || null,
+              metadata: paymentIntent.metadata || {}
+            });
+          }
+        } catch (error) {
+          console.error('Error handling payment success webhook:', error);
+        }
+        
         // Create audit log for successful payment
         await storage.createAuditLog({
           userId: null,
@@ -882,6 +946,38 @@ Please ensure that you or an authorized representative is present during the ins
       case 'payment_intent.payment_failed':
         const failedPayment = event.data.object as Stripe.PaymentIntent;
         console.log('Payment failed:', failedPayment.id);
+        
+        // Update payment record if it exists
+        try {
+          let payment = await storage.getPaymentByIntentId(failedPayment.id);
+          
+          if (payment) {
+            // Update existing payment record with failed status
+            await storage.updatePaymentStatus(payment.id, 'failed', {
+              ...(failedPayment.metadata || {}),
+              error: failedPayment.last_payment_error
+            });
+          } else {
+            // Create new payment record for the failure
+            await storage.createPayment({
+              paymentIntentId: failedPayment.id,
+              applicationId: null,
+              amount: failedPayment.amount,
+              currency: failedPayment.currency,
+              status: 'failed',
+              paymentMethod: failedPayment.payment_method_types[0] || null,
+              customerEmail: failedPayment.receipt_email || null,
+              customerName: null,
+              stripeCustomerId: failedPayment.customer as string || null,
+              metadata: {
+                ...(failedPayment.metadata || {}),
+                error: failedPayment.last_payment_error
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error handling payment failure webhook:', error);
+        }
         
         // Create audit log for failed payment
         await storage.createAuditLog({

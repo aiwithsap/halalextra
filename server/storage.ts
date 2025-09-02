@@ -5,6 +5,7 @@ import {
   certificates, type Certificate, type InsertCertificate,
   inspections, type Inspection, type InsertInspection,
   feedback as feedbackTable, type Feedback, type InsertFeedback,
+  payments, type Payment, type InsertPayment,
   auditLogs, type AuditLog, type InsertAuditLog
 } from "@shared/schema";
 import { generateCertificateNumber } from "./utils";
@@ -52,6 +53,13 @@ export interface IStorage {
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   updateFeedbackStatus(id: number, status: string, moderatorId: number): Promise<Feedback>;
   
+  // Payment operations
+  getPayment(id: number): Promise<Payment | undefined>;
+  getPaymentByIntentId(paymentIntentId: string): Promise<Payment | undefined>;
+  getPaymentsByApplicationId(applicationId: number): Promise<Payment[]>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  updatePaymentStatus(id: number, status: string, metadata?: any): Promise<Payment>;
+  
   // Audit log operations
   createAuditLog(auditLog: InsertAuditLog): Promise<AuditLog>;
   getAuditLogs(entityType: string, entityId: number): Promise<AuditLog[]>;
@@ -64,6 +72,7 @@ export class MemStorage implements IStorage {
   private certificates: Map<number, Certificate>;
   private inspections: Map<number, Inspection>;
   private feedbacks: Map<number, Feedback>;
+  private payments: Map<number, Payment>;
   private auditLogs: Map<number, AuditLog>;
   
   private userIdCounter: number = 1;
@@ -72,6 +81,7 @@ export class MemStorage implements IStorage {
   private certificateIdCounter: number = 1;
   private inspectionIdCounter: number = 1;
   private feedbackIdCounter: number = 1;
+  private paymentIdCounter: number = 1;
   private auditLogIdCounter: number = 1;
 
   constructor() {
@@ -81,6 +91,7 @@ export class MemStorage implements IStorage {
     this.certificates = new Map();
     this.inspections = new Map();
     this.feedbacks = new Map();
+    this.payments = new Map();
     this.auditLogs = new Map();
     
     // Create default admin and inspector users - using plaintext for development
@@ -316,6 +327,48 @@ export class MemStorage implements IStorage {
     
     this.feedbacks.set(id, updatedFeedback);
     return updatedFeedback;
+  }
+
+  // Payment operations
+  async getPayment(id: number): Promise<Payment | undefined> {
+    return this.payments.get(id);
+  }
+
+  async getPaymentByIntentId(paymentIntentId: string): Promise<Payment | undefined> {
+    return Array.from(this.payments.values()).find(payment => 
+      payment.paymentIntentId === paymentIntentId
+    );
+  }
+
+  async getPaymentsByApplicationId(applicationId: number): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter(payment => 
+      payment.applicationId === applicationId
+    );
+  }
+
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    const id = this.paymentIdCounter++;
+    const now = new Date();
+    const newPayment: Payment = { ...payment, id, createdAt: now, updatedAt: now };
+    this.payments.set(id, newPayment);
+    return newPayment;
+  }
+
+  async updatePaymentStatus(id: number, status: string, metadata?: any): Promise<Payment> {
+    const payment = this.payments.get(id);
+    if (!payment) {
+      throw new Error(`Payment with ID ${id} not found`);
+    }
+    
+    const updatedPayment: Payment = { 
+      ...payment, 
+      status, 
+      metadata: metadata || payment.metadata,
+      updatedAt: new Date() 
+    };
+    
+    this.payments.set(id, updatedPayment);
+    return updatedPayment;
   }
 
   // Audit log operations
@@ -602,6 +655,52 @@ export class DatabaseStorage implements IStorage {
     }
     
     return feedbackItem;
+  }
+
+  // Payment operations
+  async getPayment(id: number): Promise<Payment | undefined> {
+    const [payment] = await db.select().from(payments).where(eq(payments.id, id));
+    return payment || undefined;
+  }
+
+  async getPaymentByIntentId(paymentIntentId: string): Promise<Payment | undefined> {
+    const [payment] = await db.select().from(payments).where(eq(payments.paymentIntentId, paymentIntentId));
+    return payment || undefined;
+  }
+
+  async getPaymentsByApplicationId(applicationId: number): Promise<Payment[]> {
+    return await db.select().from(payments).where(eq(payments.applicationId, applicationId));
+  }
+
+  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+    const [payment] = await db
+      .insert(payments)
+      .values(insertPayment)
+      .returning();
+    return payment;
+  }
+
+  async updatePaymentStatus(id: number, status: string, metadata?: any): Promise<Payment> {
+    const updateData: any = {
+      status,
+      updatedAt: new Date()
+    };
+
+    if (metadata !== undefined) {
+      updateData.metadata = metadata;
+    }
+
+    const [payment] = await db
+      .update(payments)
+      .set(updateData)
+      .where(eq(payments.id, id))
+      .returning();
+    
+    if (!payment) {
+      throw new Error(`Payment with ID ${id} not found`);
+    }
+    
+    return payment;
   }
 
   // Audit log operations
