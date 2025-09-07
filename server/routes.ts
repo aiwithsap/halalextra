@@ -200,6 +200,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
   
+  // Token refresh endpoint
+  app.post('/api/auth/refresh', authMiddleware, asyncHandler(async (req, res) => {
+    try {
+      // In a real application, you would:
+      // 1. Verify the current token is still valid but about to expire
+      // 2. Generate a new JWT token with extended expiry
+      // For this prototype, we'll just generate a new base64 token
+      
+      const userData = {
+        username: req.user.username,
+        role: req.user.role,
+        timestamp: Date.now()
+      };
+      
+      const newToken = Buffer.from(JSON.stringify(userData)).toString('base64');
+      
+      res.json({
+        token: newToken,
+        user: {
+          id: req.user.userId,
+          username: req.user.username,
+          role: req.user.role,
+          email: req.user.username + '@halalcert.org'
+        }
+      });
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      res.status(500).json({ message: 'Failed to refresh token' });
+    }
+  }));
+  
   // Application routes
   app.post('/api/applications', upload.fields([
     { name: 'businessLicense', maxCount: 1 },

@@ -1,103 +1,57 @@
-import { useState, useEffect } from "react";
+import React from "react";
 import { Redirect } from "wouter";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
-  component: React.ComponentType<any>;
+  component?: React.ComponentType<any>;
+  children?: React.ReactNode;
   roles?: string[];
+  redirectTo?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component, roles }) => {
-  const { toast } = useToast();
-  const [verified, setVerified] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [redirectTo, setRedirectTo] = useState<string | null>(null);
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  component: Component, 
+  children, 
+  roles, 
+  redirectTo = "/login" 
+}) => {
+  const { user, isLoading, isAuthenticated } = useAuth();
   
-  useEffect(() => {
-    const verifyAuthentication = async () => {
-      try {
-        // For admin pages, we'll use a direct token check
-        const token = localStorage.getItem("token");
-        
-        if (!token) {
-          toast({
-            title: "Access denied",
-            description: "You must be logged in to access this page",
-            variant: "destructive"
-          });
-          setRedirectTo("/login");
-          return;
-        }
-        
-        // This will use the token from localStorage
-        const response = await fetch("/api/auth/me", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Verify role check
-          if (roles && !roles.includes(data.user.role)) {
-            toast({
-              title: "Permission denied",
-              description: "You don't have permission to access this page",
-              variant: "destructive"
-            });
-            setRedirectTo("/");
-            return;
-          }
-          
-          // All checks passed
-          setVerified(true);
-        } else {
-          toast({
-            title: "Session expired",
-            description: "Your session has expired. Please login again.",
-            variant: "destructive"
-          });
-          setRedirectTo("/login");
-        }
-      } catch (error) {
-        console.error("Auth verification error:", error);
-        toast({
-          title: "Authentication error",
-          description: "There was an error verifying your credentials",
-          variant: "destructive"
-        });
-        setRedirectTo("/login");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    verifyAuthentication();
-  }, []);
-  
-  if (redirectTo) {
-    return <Redirect to={redirectTo} />;
-  }
-  
-  if (loading) {
+  // Show loading spinner while checking auth
+  if (isLoading) {
     return (
-      <div className="container py-12 flex flex-col items-center justify-center">
-        <div className="animate-pulse mb-4">
-          <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center">
-            <div className="h-6 w-6 bg-primary/40 rounded-full"></div>
-          </div>
-        </div>
+      <div className="container py-12 flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
         <p className="text-gray-500">Verifying your credentials...</p>
       </div>
     );
   }
   
-  if (!verified) {
-    return <Redirect to="/login" />;
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    return <Redirect to={redirectTo} />;
   }
   
-  return <Component />;
+  // Check role-based access
+  if (roles && user && !roles.includes(user.role)) {
+    return (
+      <div className="container py-12 flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600 mb-4">You don't have permission to access this page.</p>
+          <a href="/" className="text-primary hover:underline">Return to Home</a>
+        </div>
+      </div>
+    );
+  }
+  
+  // User is authenticated and authorized
+  if (Component) {
+    return <Component />;
+  }
+  
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

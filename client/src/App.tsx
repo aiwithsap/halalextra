@@ -15,6 +15,7 @@ import Certificate from "./pages/Certificate";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Login from "./pages/Login";
+import Unauthorized from "./pages/Unauthorized";
 import InspectorDashboard from "./pages/inspector/Dashboard";
 import ApplicationDetail from "./pages/inspector/ApplicationDetail";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -68,6 +69,7 @@ function AppRouter() {
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/login" component={Login} />
+      <Route path="/unauthorized" component={Unauthorized} />
       
       {/* Admin Routes */}
       <Route path="/admin/dashboard">
