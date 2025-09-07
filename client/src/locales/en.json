@@ -6,6 +6,7 @@
     "continue": "Continue",
     "cancel": "Cancel",
     "search": "Search",
+    "searching": "Searching...",
     "loading": "Loading...",
     "error": "An error occurred",
     "close": "Close",
@@ -19,7 +20,26 @@
     "remove": "Remove",
     "home": "Home",
     "language": "Language",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "sending": "Sending...",
+    "scheduling": "Scheduling...",
+    "schedule": "Schedule",
+    "retry": "Retry",
+    "goToVerification": "Go to Verification",
+    "months": {
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
+    }
   },
   "header": {
     "navigation": {
@@ -250,8 +270,24 @@
   "verify": {
     "title": "Verify Certificate",
     "subtitle": "Verify the authenticity of a Halal certification",
+    "pageTitle": "Verify Halal Certificate",
+    "pageSubtitle": "Check the authenticity and current status of any Halal certification",
+    "description": "Enter a certificate number or scan a QR code to verify the authenticity of a Halal certification",
     "enterCertificate": "Enter Certificate Number",
     "scanQr": "Or Scan QR Code",
+    "scanQR": "Scan QR Code",
+    "scanQRDescription": "Use your device camera to scan the QR code on the certificate",
+    "qrScanImageAlt": "QR Code Scanner",
+    "openCamera": "Open Camera",
+    "searchBusiness": "Search by Business",
+    "searchDescription": "Enter the certificate number or business name to verify certification",
+    "searchPlaceholder": "Enter certificate number or business name",
+    "emptySearchError": "Search Required",
+    "enterSearchTerm": "Please enter a certificate number or business name to search",
+    "noMatchingCertificate": "No certificate found matching your search criteria",
+    "searchError": "An error occurred while searching. Please try again.",
+    "invalidFormat": "Invalid QR Code",
+    "invalidQRFormat": "The scanned QR code is not a valid certificate format",
     "verify": "Verify",
     "verificationResults": "Verification Results",
     "valid": "Valid Certificate",
@@ -334,7 +370,61 @@
       "inspectionsCount": "Scheduled Inspections",
       "recentApplications": "Recent Applications",
       "pageTitle": "Admin Dashboard",
-      "description": "Manage certifications, applications, and users from one central location."
+      "description": "Manage certifications, applications, and users from one central location.",
+      "dashboard": "Dashboard",
+      "welcomeMessage": "Welcome back, {{name}}",
+      "dashboardDescription": "Here's an overview of your Halal certification system",
+      "tabs": {
+        "overview": "Overview",
+        "applications": "Applications",
+        "certificates": "Certificates",
+        "users": "Users"
+      },
+      "stats": {
+        "applications": "Total Applications",
+        "activeCertificates": "Active Certificates",
+        "pendingFeedback": "Pending Feedback",
+        "inspectors": "Active Inspectors",
+        "fromLastMonth": "from last month"
+      },
+      "alerts": {
+        "title": "System Alerts",
+        "description": "Important system notifications and alerts",
+        "expiringCertificates": "Expiring Certificates",
+        "expiringCertificatesDesc": "{{count}} certificates are expiring in the next 30 days",
+        "pendingFeedback": "Pending Feedback",
+        "pendingFeedbackDesc": "{{count}} feedback items require moderation",
+        "moderateNow": "Moderate Now",
+        "securityAlert": "Security Update",
+        "securityAlertDesc": "System security scan completed successfully"
+      },
+      "charts": {
+        "applicationVsCertification": "Applications vs Certifications",
+        "applicationVsCertificationDesc": "Monthly trend of applications and new certifications",
+        "applications": "Applications",
+        "certifications": "Certifications",
+        "applicationStatus": "Application Status",
+        "applicationStatusDesc": "Current distribution of application statuses",
+        "certificateStatus": "Certificate Status",
+        "certificateStatusDesc": "Distribution of certificate statuses"
+      },
+      "feedback": {
+        "title": "Feedback Management",
+        "description": "Review and moderate user feedback",
+        "pendingModeration": "{{count}} items pending moderation",
+        "pendingModerationDesc": "Review and approve or reject user feedback",
+        "moderateButton": "Moderate Feedback"
+      },
+      "certificates": {
+        "title": "Certificate Management",
+        "description": "Manage and issue halal certificates",
+        "comingSoon": "Certificate management features coming soon"
+      },
+      "users": {
+        "title": "User Management",
+        "description": "Manage system users and permissions",
+        "comingSoon": "User management features coming soon"
+      }
     },
     "inspector": {
       "title": "Inspector Dashboard",
@@ -346,7 +436,32 @@
       "completedCount": "Completed",
       "pendingCount": "Pending",
       "pageTitle": "Inspector Dashboard",
-      "description": "Schedule and review on-site inspections for businesses applying for Halal certification."
+      "description": "Schedule and review on-site inspections for businesses applying for Halal certification.",
+      "inspectionDetails": "Inspection Details",
+      "inspectionDescription": "Review and manage inspection details for this application",
+      "noInspections": "No Inspections Scheduled",
+      "scheduleFirstInspection": "Schedule your first inspection to proceed with the certification",
+      "scheduleInspection": "Schedule Inspection",
+      "scheduleInspectionDescription": "Select a date and time for the on-site inspection",
+      "visitDate": "Visit Date",
+      "notes": "Notes",
+      "notesPlaceholder": "Add any notes or special instructions for this inspection",
+      "scheduleSuccess": "Inspection Scheduled",
+      "scheduleSuccessDescription": "The inspection has been successfully scheduled",
+      "scheduleError": "Failed to schedule inspection",
+      "approvalSuccess": "Application Approved",
+      "approvalSuccessDescription": "The application has been successfully approved",
+      "rejectionSuccess": "Application Rejected",
+      "rejectionSuccessDescription": "The application has been rejected",
+      "decisionError": "Failed to process decision",
+      "scheduledFor": "Scheduled for",
+      "inspectionCreated": "Inspection created",
+      "statuses": {
+        "pending": "Pending",
+        "under_review": "Under Review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
     },
     "store": {
       "title": "Business Dashboard",
@@ -401,6 +516,17 @@
       "notes": "Notes"
     },
     "empty": "No applications found"
+  },
+  "certificate": {
+    "statuses": {
+      "pending": "Pending",
+      "under_review": "Under Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    }
   },
   "certificates": {
     "title": "Certificates",

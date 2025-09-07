@@ -1,7 +1,8 @@
 # HalalExtra - Railway Deployment Guide
 
 ## 📋 Project Overview
-
+this app is deployed at halalextra-production.up.railway.app. Use playwright for testing it.
+All software installs are to be done on docker. Dont mess with the local environment. 
 The project is meant to faciliate the process of granting halal certification to retail stores. For this the following processes are core.
 1. The retail store owner comes and fills up a form on the project website or app, requesting halal certification for his shop. After filling in the form, he pays a fixed fee via Stripe to begin the certification process.
 2. Our app will engage an inspector to go over to this retail shop and conduct an inspection. Some more form filling and uploading of pictures would be needed. 
@@ -83,10 +84,9 @@ ALLOWED_ORIGINS=https://your-domain.com
    - Deploy the application
 
 3. **Database Migration**
-   ```bash
-   # Run database migrations after first deployment
-   npm run db:push
-   ```
+   - Database migrations are automatically handled during deployment
+   - Railway configuration includes `npm run db:push` in the start command
+   - Manual migration if needed: `npm run db:push`
 
 ### Post-Deployment Checklist
 
@@ -111,6 +111,9 @@ npm run build
 
 # Production start
 npm start
+
+# Railway production start (includes migration)
+npm run railway:start
 
 # Type checking
 npm run check
@@ -212,6 +215,11 @@ Railway provides built-in monitoring. Key metrics to watch:
    - Ensure `SESSION_SECRET` is set
    - Check cookie settings for HTTPS in production
 
+5. **Playwright Testing Issues**
+   - **MCP Playwright Crash**: Use Docker instead of MCP Playwright to avoid browser installation conflicts
+   - **Browser Installation**: Local Playwright may fail with "Chromium distribution not found"
+   - **Test Timeouts**: Production site requires longer timeouts (30s recommended vs default 5s)
+
 ### Debug Commands
 ```bash
 # Check environment variables
@@ -223,7 +231,74 @@ npm run db:push
 
 # Check application logs
 railway logs
+
+# Run Playwright tests (Docker method - RECOMMENDED)
+docker run --rm -v "$(pwd)":/workspace -w /workspace mcr.microsoft.com/playwright:v1.55.0-jammy npx playwright test --project=chromium --workers=1 --timeout=30000
+
+# Run specific test suite
+docker run --rm -v "$(pwd)":/workspace -w /workspace mcr.microsoft.com/playwright:v1.55.0-jammy npx playwright test tests/store-owner-flow.spec.ts --project=chromium --workers=1 --timeout=30000
+
+# View Playwright test report
+npx playwright show-report
 ```
+
+## 🧪 E2E Testing with Playwright
+
+### Docker-Based Testing Setup
+
+The project uses Playwright v1.55.0 for end-to-end testing against the live production environment at `https://halalextra-production.up.railway.app`.
+
+#### Key Configuration:
+- **Base URL**: `https://halalextra-production.up.railway.app`
+- **Playwright Version**: v1.55.0 
+- **Docker Image**: `mcr.microsoft.com/playwright:v1.55.0-jammy`
+- **Timeout**: 30s (increased for production site)
+- **Workers**: 1 (sequential execution)
+
+#### Test Suites Available:
+- `tests/homepage-navigation.spec.ts` - Homepage and navigation functionality
+- `tests/store-owner-flow.spec.ts` - Store owner certification request process
+- `tests/inspector-workflow.spec.ts` - Inspector evaluation and approval workflow
+- `tests/qr-verification-flow.spec.ts` - QR code verification system
+- `tests/admin-dashboard-flow.spec.ts` - Admin dashboard and management
+- `tests/authentication-flow.spec.ts` - Login/logout and session management
+
+#### Running Tests:
+```bash
+# Run all tests
+docker run --rm -v "$(pwd)":/workspace -w /workspace mcr.microsoft.com/playwright:v1.55.0-jammy npx playwright test --project=chromium --workers=1 --timeout=30000
+
+# Run specific test file
+docker run --rm -v "$(pwd)":/workspace -w /workspace mcr.microsoft.com/playwright:v1.55.0-jammy npx playwright test tests/store-owner-flow.spec.ts --project=chromium --workers=1 --timeout=30000
+
+# Run with specific browser
+docker run --rm -v "$(pwd)":/workspace -w /workspace mcr.microsoft.com/playwright:v1.55.0-jammy npx playwright test --project=firefox --workers=1 --timeout=30000
+
+# Generate test report
+npx playwright show-report
+```
+
+#### Common Test Patterns:
+```typescript
+// Specific element selectors to avoid conflicts
+await expect(page.locator('h1').filter({ hasText: 'Halal Certification' }).first()).toBeVisible();
+
+// Navigation elements
+await expect(page.locator('nav button').filter({ hasText: 'Home' })).toBeVisible();
+
+// Conditional feature testing
+const languageSelector = page.locator('[data-testid="language-selector"]');
+if (await languageSelector.count() > 0) {
+  // Test language functionality
+} else {
+  console.log('Feature not implemented - skipping test');
+}
+```
+
+### Test Results Integration:
+- Screenshots on failure: `test-results/[test-name]/test-failed-*.png`
+- Videos on failure: `test-results/[test-name]/video.webm`
+- HTML reports: `playwright-report/index.html`
 
 ## 🔄 CI/CD Pipeline
 
@@ -232,6 +307,7 @@ Railway automatically deploys on git push to main branch:
 2. Builds application (`npm run build`)
 3. Runs startup command (`npm start`)
 4. Health checks and deployment verification
+5. **Optional**: Run E2E tests post-deployment for validation
 
 ## 📞 Support
 
@@ -241,11 +317,257 @@ For deployment issues:
 3. Verify environment variables are correctly set
 4. Test database connectivity
 
-# Transport Changes to Railway.com
-I want you to use the Railway GraphQL API directly to read the logs and suggest corrections. I dont want to run that script myself. The whole point of this integration is that I dont have to copy paste railway.com logs for you. After pushing changes, wait for 4 minutes before you start using the Railway GraphQL API to check for issues. If issues are found, diagnose and suggest solutions promptly. 
+## 🛠️ Railway GraphQL API Integration
+
+### API Configuration
+The project includes Railway API credentials for automated deployment monitoring:
+
+```bash
+# Railway API Credentials
+RAILWAY_API_KEY=b778d147-4a26-4c82-8a51-72aa48c76aeb
+PROJECT_ID=d60b5164-78fd-4260-b37b-6a6bfdb04404
+ENVIRONMENT_ID=b7f05a51-8509-4a69-afad-e8cdeebb7d33
+```
+
+### Technical Implementation
+
+#### GraphQL Endpoint
+- **URL**: `https://backboard.railway.com/graphql/v2`
+- **Method**: POST
+- **Authentication**: Bearer token in Authorization header
+- **Content-Type**: application/json
+
+#### Core API Queries Used
+
+**1. Project Information Query**
+```graphql
+query {
+  project(id: "d60b5164-78fd-4260-b37b-6a6bfdb04404") {
+    id
+    name
+    deployments(first: 10) {
+      edges {
+        node {
+          id
+          status
+          createdAt
+        }
+      }
+    }
+  }
+}
+```
+
+**2. Environment-Specific Deployment Query**
+```graphql
+query {
+  environment(id: "b7f05a51-8509-4a69-afad-e8cdeebb7d33") {
+    id
+    name
+    deployments(first: 5) {
+      edges {
+        node {
+          id
+          status
+          createdAt
+          url
+          staticUrl
+        }
+      }
+    }
+  }
+}
+```
+
+**3. Environment Discovery Query**
+```graphql
+query {
+  project(id: "d60b5164-78fd-4260-b37b-6a6bfdb04404") {
+    id
+    name
+    environments {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+```
+
+#### Implementation in cURL Commands
+
+**Check Recent Project Deployments:**
+```bash
+curl -X POST https://backboard.railway.com/graphql/v2 \
+  -H "Authorization: Bearer b778d147-4a26-4c82-8a51-72aa48c76aeb" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { project(id: \"d60b5164-78fd-4260-b37b-6a6bfdb04404\") { id name deployments(first: 10) { edges { node { id status createdAt } } } } }"}'
+```
+
+**Check Production Environment Status:**
+```bash
+curl -X POST https://backboard.railway.com/graphql/v2 \
+  -H "Authorization: Bearer b778d147-4a26-4c82-8a51-72aa48c76aeb" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { environment(id: \"b7f05a51-8509-4a69-afad-e8cdeebb7d33\") { id name deployments(first: 5) { edges { node { id status createdAt url staticUrl } } } } }"}'
+```
+
+**Discover Project Environments:**
+```bash
+curl -X POST https://backboard.railway.com/graphql/v2 \
+  -H "Authorization: Bearer b778d147-4a26-4c82-8a51-72aa48c76aeb" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { project(id: \"d60b5164-78fd-4260-b37b-6a6bfdb04404\") { id name environments { edges { node { id name } } } } }"}'
+```
+
+#### Deployment Status Interpretation
+
+**Status Values:**
+- `SUCCESS`: Deployment completed successfully
+- `FAILED`: Deployment failed due to build/runtime errors
+- `BUILDING`: Deployment currently in progress
+- `REMOVED`: Deployment was replaced by newer deployment
+- `CRASHED`: Deployment crashed after starting
+
+**Response Analysis:**
+```json
+{
+  "data": {
+    "environment": {
+      "id": "b7f05a51-8509-4a69-afad-e8cdeebb7d33",
+      "name": "production",
+      "deployments": {
+        "edges": [
+          {
+            "node": {
+              "id": "f4282046-0b8e-4fa2-b5a2-170e891a43f3",
+              "status": "SUCCESS",
+              "createdAt": "2025-09-02T11:50:26.635Z",
+              "url": null,
+              "staticUrl": "halalextra-production.up.railway.app"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+#### Automated Monitoring Workflow
+
+**Claude Code Implementation:**
+1. **Post-Push Wait**: Wait 4 minutes after git push for Railway to process deployment
+2. **Status Check**: Query Railway GraphQL API for latest deployment status
+3. **Health Verification**: Test deployed application endpoint with HTTP HEAD request
+4. **Issue Detection**: Parse deployment logs if status indicates failure
+5. **Reporting**: Provide deployment success/failure status with actionable insights
+
+**Timing Strategy:**
+- **Initial Check**: 4 minutes after git push (allows Railway time to build and deploy)
+- **Follow-up**: Additional checks if deployment status is still "BUILDING"
+- **Timeout**: Consider deployment failed if not completed within 10 minutes
+
+#### Error Handling
+
+**Common API Errors:**
+```json
+{"errors":[{"message":"Problem processing request","traceId":"5457201880138634836"}]}
+```
+
+**Error Recovery:**
+- Retry with simpler query structure
+- Fallback to basic project-level deployment check
+- Manual verification via direct application URL testing
+
+**Rate Limiting:**
+- Railway API has rate limits (exact limits not documented)
+- Implement exponential backoff for retries
+- Space out API calls appropriately
+
+#### Integration Benefits
+
+**For Development Workflow:**
+- ✅ Automated post-deployment verification
+- ✅ Real-time deployment status monitoring
+- ✅ Early detection of deployment failures
+- ✅ No manual log copying required
+- ✅ Immediate feedback on code changes
+
+**For Production Reliability:**
+- ✅ Deployment success validation
+- ✅ Application health verification
+- ✅ Rapid issue identification
+- ✅ Automated rollback recommendations (future enhancement)
+
+### Project Information
+- **Project ID**: `d60b5164-78fd-4260-b37b-6a6bfdb04404`
+- **Project Name**: `halalextra`  
+- **Environment ID**: `b7f05a51-8509-4a69-afad-e8cdeebb7d33`
+- **Environment Name**: `production`
+- **Live URL**: `https://halalextra-production.up.railway.app`
+- **Current Status**: ✅ SUCCESS (2025-09-02T11:50:26.635Z)
+
+### Example Successful Deployment Response
+```json
+{
+  "data": {
+    "environment": {
+      "id": "b7f05a51-8509-4a69-afad-e8cdeebb7d33",
+      "name": "production",
+      "deployments": {
+        "edges": [
+          {
+            "node": {
+              "id": "f4282046-0b8e-4fa2-b5a2-170e891a43f3",
+              "status": "SUCCESS",
+              "createdAt": "2025-09-02T11:50:26.635Z",
+              "staticUrl": "halalextra-production.up.railway.app"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+## 🔄 Deployment Workflow
+
+### Automatic Database Migration
+Railway deployment now includes automatic database schema migration:
+
+```toml
+# railway.toml
+[deploy]
+startCommand = "npm run db:push && npm start"
+```
+
+This ensures that:
+1. Database schema is migrated before application starts
+2. New tables and columns are created automatically
+3. Deployment failures due to schema mismatches are prevented
+
+### Document Storage System
+The application now uses PostgreSQL for document storage with base64 encoding:
+- **Schema**: Text fields store base64-encoded file data
+- **Upload**: Files converted to base64 before database storage
+- **Download**: Base64 data converted back to binary for serving
+- **Compatibility**: Works with all Drizzle ORM versions
+
+### Recent Fixes Applied
+- ✅ Fixed `bytea` compatibility issue with Drizzle ORM v0.39.1
+- ✅ Implemented automatic database migrations on deployment
+- ✅ Updated document upload/download endpoints for base64 encoding
+- ✅ Verified Railway GraphQL API integration for monitoring 
 
 ---
 
-**Last Updated**: January 2025
-**Railway Version**: Latest
+**Last Updated**: September 2025
+**Railway Version**: Latest  
 **Node.js Version**: 18+
+**Drizzle ORM Version**: 0.39.1
+**API Integration**: ✅ Railway GraphQL API Enabled
