@@ -133,13 +133,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   
-  // Create default admin user on startup
-  try {
-    await createDefaultAdminUser();
-    logger.info('Database initialization completed');
-  } catch (error: any) {
-    logger.error('Failed to initialize database', { error: error.message });
-  }
+  // Create default admin user on startup (non-blocking)
+  createDefaultAdminUser()
+    .then(() => {
+      logger.info('Database initialization completed');
+    })
+    .catch((error: any) => {
+      logger.error('Failed to initialize database', { error: error.message });
+      // Don't crash the application if database is not available
+    });
   
   // Health check endpoint for Railway
   app.get('/api/health', (req, res) => {

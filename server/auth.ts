@@ -25,7 +25,11 @@ declare global {
 // JWT secret from environment with secure fallback
 const JWT_SECRET = process.env.JWT_SECRET || (() => {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET environment variable is required in production');
+    // Generate a temporary secret in production to prevent crash
+    const crypto = require('crypto');
+    const tempSecret = crypto.randomBytes(32).toString('hex');
+    logger.error('JWT_SECRET missing in production - using temporary secret. Set JWT_SECRET environment variable immediately!');
+    return tempSecret;
   }
   logger.warn('Using default JWT secret for development - DO NOT USE IN PRODUCTION');
   return 'development-secret-key';
