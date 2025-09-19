@@ -1,10 +1,11 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Download, Eye, Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import GeometricPattern from "@/components/shared/GeometricPattern";
+import { downloadCertificatePDF, previewCertificatePDF } from "@/utils/pdfGenerator";
 
 interface PrintableCertificateProps {
   certificate: {
@@ -23,6 +24,8 @@ const PrintableCertificate: React.FC<PrintableCertificateProps> = ({ certificate
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
   const printRef = useRef<HTMLDivElement>(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // Format dates
   const formatDate = (dateString: string) => {
@@ -47,16 +50,78 @@ const PrintableCertificate: React.FC<PrintableCertificateProps> = ({ certificate
     window.location.reload();
   };
 
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
+    setPdfError(null);
+    
+    try {
+      await downloadCertificatePDF(certificate);
+    } catch (error) {
+      console.error('PDF download failed:', error);
+      setPdfError(error instanceof Error ? error.message : 'Failed to download PDF');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const handlePreviewPDF = async () => {
+    setIsGeneratingPDF(true);
+    setPdfError(null);
+    
+    try {
+      await previewCertificatePDF(certificate);
+    } catch (error) {
+      console.error('PDF preview failed:', error);
+      setPdfError(error instanceof Error ? error.message : 'Failed to preview PDF');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   return (
     <div className="mb-8">
-      <div className="flex justify-end mb-4">
+      {pdfError && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-700 text-sm">{pdfError}</p>
+        </div>
+      )}
+      
+      <div className="flex flex-wrap gap-2 justify-end mb-4">
         <Button 
           variant="outline" 
           onClick={handlePrint} 
           className="text-gray-700"
+          disabled={isGeneratingPDF}
         >
           <Printer className="mr-2 h-4 w-4" />
           {t('certificate.printForDisplay')}
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          onClick={handlePreviewPDF} 
+          className="text-gray-700"
+          disabled={isGeneratingPDF}
+        >
+          {isGeneratingPDF ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Eye className="mr-2 h-4 w-4" />
+          )}
+          {t('certificate.previewPDF')}
+        </Button>
+        
+        <Button 
+          onClick={handleDownloadPDF} 
+          disabled={isGeneratingPDF}
+          className="bg-primary text-white hover:bg-primary/90"
+        >
+          {isGeneratingPDF ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          {t('certificate.downloadPDF')}
         </Button>
       </div>
 

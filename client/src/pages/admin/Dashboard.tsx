@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Helmet } from "react-helmet";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { adminApi, queryKeys, handleApiError } from "@/services/api";
 import ApplicationQueue from "@/components/dashboard/ApplicationQueue";
 import {
   Card,
@@ -42,7 +44,9 @@ import {
   IdCard, 
   ShieldAlert, 
   Clock,
-  ArrowUpRight 
+  ArrowUpRight,
+  Loader2,
+  RefreshCw 
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -51,35 +55,87 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Sample data for charts (in a real app, this would come from the API)
-  const applicationStatusData = [
-    { name: t("inspector.statuses.pending"), value: 12, color: "#FF8F00" },
-    { name: t("inspector.statuses.under_review"), value: 8, color: "#00796B" },
-    { name: t("inspector.statuses.approved"), value: 24, color: "#2E7D32" },
-    { name: t("inspector.statuses.rejected"), value: 4, color: "#C62828" },
+  // Fetch real data from APIs
+  const { data: dashboardData, isLoading: isDashboardLoading, error: dashboardError, refetch: refetchDashboard } = useQuery({
+    queryKey: queryKeys.adminStats,
+    queryFn: adminApi.getDashboardStats,
+    refetchInterval: 30000, // Refresh every 30 seconds
+    retry: 2
+  });
+
+  const { data: pendingFeedback, isLoading: isFeedbackLoading } = useQuery({
+    queryKey: queryKeys.adminPendingFeedback,
+    queryFn: adminApi.getPendingFeedback,
+    refetchInterval: 60000 // Refresh every minute
+  });
+
+  // Loading component
+  const LoadingSpinner = () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+
+  // Error component
+  const ErrorMessage = ({ error, onRetry }: { error: any, onRetry?: () => void }) => (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-center">
+        <p className="text-red-600 mb-2">Error loading data: {handleApiError(error)}</p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  // Process real data or use fallback
+  const applicationStatusData = dashboardData?.statusBreakdown || [
+    { name: t("inspector.statuses.pending"), value: 0, color: "#FF8F00" },
+    { name: t("inspector.statuses.under_review"), value: 0, color: "#00796B" },
+    { name: t("inspector.statuses.approved"), value: 0, color: "#2E7D32" },
+    { name: t("inspector.statuses.rejected"), value: 0, color: "#C62828" },
   ];
 
+  // For now, use static data for certificates - would be replaced with real API data
   const certificateStatusData = [
-    { name: t("certificate.statuses.active"), value: 128, color: "#2E7D32" },
+    { name: t("certificate.statuses.active"), value: dashboardData?.stats?.activeCertificates || 0, color: "#2E7D32" },
     { name: t("certificate.statuses.expired"), value: 45, color: "#FF8F00" },
     { name: t("certificate.statuses.revoked"), value: 12, color: "#C62828" },
   ];
 
-  const monthlyApplicationsData = [
-    { name: t("common.months.jan"), applications: 5 },
-    { name: t("common.months.feb"), applications: 8 },
-    { name: t("common.months.mar"), applications: 12 },
-    { name: t("common.months.apr"), applications: 10 },
-    { name: t("common.months.may"), applications: 15 },
-    { name: t("common.months.jun"), applications: 18 },
-    { name: t("common.months.jul"), applications: 14 },
-    { name: t("common.months.aug"), applications: 12 },
-    { name: t("common.months.sep"), applications: 9 },
-    { name: t("common.months.oct"), applications: 16 },
-    { name: t("common.months.nov"), applications: 11 },
-    { name: t("common.months.dec"), applications: 7 },
-  ];
+  // Generate monthly data based on available applications
+  const generateMonthlyData = (applications: any[]) => {
+    if (!applications) return [];
+    
+    const monthCounts = applications.reduce((acc, app) => {
+      const date = new Date(app.createdAt || app.submissionDate);
+      const month = date.getMonth();
+      acc[month] = (acc[month] || 0) + 1;
+      return acc;
+    }, {});
 
+    return [
+      { name: t("common.months.jan"), applications: monthCounts[0] || 0 },
+      { name: t("common.months.feb"), applications: monthCounts[1] || 0 },
+      { name: t("common.months.mar"), applications: monthCounts[2] || 0 },
+      { name: t("common.months.apr"), applications: monthCounts[3] || 0 },
+      { name: t("common.months.may"), applications: monthCounts[4] || 0 },
+      { name: t("common.months.jun"), applications: monthCounts[5] || 0 },
+      { name: t("common.months.jul"), applications: monthCounts[6] || 0 },
+      { name: t("common.months.aug"), applications: monthCounts[7] || 0 },
+      { name: t("common.months.sep"), applications: monthCounts[8] || 0 },
+      { name: t("common.months.oct"), applications: monthCounts[9] || 0 },
+      { name: t("common.months.nov"), applications: monthCounts[10] || 0 },
+      { name: t("common.months.dec"), applications: monthCounts[11] || 0 },
+    ];
+  };
+
+  const monthlyApplicationsData = generateMonthlyData(dashboardData?.applications);
+
+  // Static certificate renewal data for now (would be replaced with real API)
   const certificateRenewalData = [
     { name: t("common.months.jan"), count: 3 },
     { name: t("common.months.feb"), count: 5 },
@@ -95,38 +151,42 @@ const Dashboard = () => {
     { name: t("common.months.dec"), count: 4 },
   ];
 
-  // Stats for summary cards
+  // Stats for summary cards using real data
   const stats = [
     {
       title: t("admin.stats.applications"),
-      value: "48",
+      value: dashboardData?.stats?.totalApplications?.toString() || "0",
       icon: <ClipboardList className="h-6 w-6 text-primary" />,
-      change: "+12%",
+      change: "+12%", // Would calculate from historical data
       changeUp: true,
     },
     {
       title: t("admin.stats.activeCertificates"),
-      value: "128",
+      value: dashboardData?.stats?.activeCertificates?.toString() || "0",
       icon: <IdCard className="h-6 w-6 text-success" />,
-      change: "+5%",
+      change: "+5%", // Would calculate from historical data
       changeUp: true,
     },
     {
       title: t("admin.stats.pendingFeedback"),
-      value: "15",
+      value: pendingFeedback?.length?.toString() || "0",
       icon: <MessageSquare className="h-6 w-6 text-warning" />,
-      change: "-23%",
+      change: "-23%", // Would calculate from historical data
       changeUp: false,
     },
     {
       title: t("admin.stats.inspectors"),
-      value: "8",
+      value: "8", // Would come from users API
       icon: <Users className="h-6 w-6 text-primary" />,
       change: "0%",
       changeUp: null,
     },
   ];
 
+  // Create alerts based on real data
+  const pendingCount = dashboardData?.stats?.pendingApplications || 0;
+  const feedbackCount = pendingFeedback?.length || 0;
+  
   const alerts = [
     {
       id: 1,
@@ -138,7 +198,7 @@ const Dashboard = () => {
     {
       id: 2,
       title: t("admin.alerts.pendingFeedback"),
-      description: t("admin.alerts.pendingFeedbackDesc", { count: 15 }),
+      description: t("admin.alerts.pendingFeedbackDesc", { count: feedbackCount }),
       icon: <MessageSquare className="h-5 w-5 text-primary" />,
       color: "bg-primary/10 text-primary",
       action: "/admin/feedback",
@@ -177,29 +237,35 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <Card key={index}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-                        <h3 className="text-3xl font-bold mt-1">{stat.value}</h3>
-                      </div>
-                      <div className="p-2 bg-primary/10 rounded-full">{stat.icon}</div>
-                    </div>
-                    {stat.change && (
-                      <div className="flex items-center mt-2">
-                        <span className={`text-xs ${stat.changeUp === true ? 'text-success' : stat.changeUp === false ? 'text-destructive' : 'text-gray-500'}`}>
-                          {stat.change} {stat.changeUp !== null && (stat.changeUp ? '↑' : '↓')}
-                        </span>
-                        <span className="text-xs text-gray-500 ml-1">{t("admin.stats.fromLastMonth")}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {isDashboardLoading ? (
+              <LoadingSpinner />
+            ) : dashboardError ? (
+              <ErrorMessage error={dashboardError} onRetry={refetchDashboard} />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {stats.map((stat, index) => (
+                    <Card key={index}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">{stat.title}</p>
+                            <h3 className="text-3xl font-bold mt-1">{stat.value}</h3>
+                          </div>
+                          <div className="p-2 bg-primary/10 rounded-full">{stat.icon}</div>
+                        </div>
+                        {stat.change && (
+                          <div className="flex items-center mt-2">
+                            <span className={`text-xs ${stat.changeUp === true ? 'text-success' : stat.changeUp === false ? 'text-destructive' : 'text-gray-500'}`}>
+                              {stat.change} {stat.changeUp !== null && (stat.changeUp ? '↑' : '↓')}
+                            </span>
+                            <span className="text-xs text-gray-500 ml-1">{t("admin.stats.fromLastMonth")}</span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="md:col-span-2">
@@ -336,30 +402,36 @@ const Dashboard = () => {
               </Card>
             </div>
             
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("admin.feedback.title")}</CardTitle>
-                <CardDescription>{t("admin.feedback.description")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="bg-primary/5 p-4 rounded-lg">
-                    <h3 className="font-medium flex items-center">
-                      <MessageSquare className="h-5 w-5 mr-2 text-primary" />
-                      {t("admin.feedback.pendingModeration", { count: 15 })}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">{t("admin.feedback.pendingModerationDesc")}</p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Link href="/admin/feedback">
-                  <Button className="w-full">
-                    {t("admin.feedback.moderateButton")}
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("admin.feedback.title")}</CardTitle>
+                    <CardDescription>{t("admin.feedback.description")}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isFeedbackLoading ? (
+                      <LoadingSpinner />
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-primary/5 p-4 rounded-lg">
+                          <h3 className="font-medium flex items-center">
+                            <MessageSquare className="h-5 w-5 mr-2 text-primary" />
+                            {t("admin.feedback.pendingModeration", { count: feedbackCount })}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1">{t("admin.feedback.pendingModerationDesc")}</p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    <Link href="/admin/feedback">
+                      <Button className="w-full">
+                        {t("admin.feedback.moderateButton")}
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="applications">

@@ -1,12 +1,22 @@
-import type { Express, Request, Response } from "express";
+import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { authMiddleware, requireRole } from "./auth";
+import { 
+  authMiddleware, 
+  requireRole, 
+  authenticateUser, 
+  generateToken, 
+  generateRefreshToken,
+  verifyRefreshToken,
+  createInspectorUser,
+  createDefaultAdminUser 
+} from "./auth";
 import { sendEmail } from "./email";
 import { generateQRCode, generateCertificateNumber } from "./utils";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import { 
+  users,
   inspections, 
   applications, 
   stores, 
@@ -23,32 +33,66 @@ import {
   insertFeedbackSchema, 
   insertInspectionSchema 
 } from "@shared/schema";
+import {
+  validateLogin,
+  validateRegister,
+  validateStore,
+  validateApplication,
+  validateInspection,
+  validateFeedback,
+  validatePaymentIntent,
+  validateFileUpload,
+  validatePagination,
+  validateId,
+  validate
+} from "./validation";
+import {
+  configureHelmet,
+  configureCORS,
+  generalRateLimit,
+  authRateLimit,
+  speedLimiter,
+  sanitizeRequest,
+  validateFileUpload as validateFile,
+  securityAudit,
+  secureErrorHandler,
+  ipFilter
+} from "./security";
+import { requestLogger, createLogger } from "./logger";
+
+const logger = createLogger('routes');
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-12-18.acacia',
 });
 
-// Configure multer for file uploads
+// Configure secure multer for file uploads
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default
+    files: 10, // Limit number of files
+    parts: 20, // Limit multipart fields
+    fieldNameSize: 100, // Field name size limit
+    fieldSize: 1024 * 1024, // Field value size limit (1MB)
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'application/pdf', 
-      'image/jpeg', 
-      'image/png', 
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
+    // Use security validation
+    const validation = validateFile(file);
     
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only PDF, JPEG, PNG, DOC, and DOCX files are allowed.'), false);
+    if (!validation.isValid) {
+      logger.warn('File upload validation failed', {
+        filename: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        errors: validation.errors,
+        ip: req.ip
+      });
+      return cb(new Error(validation.errors[0]), false);
     }
+    
+    cb(null, true);
   }
 });
 
@@ -58,178 +102,393 @@ const asyncHandler = (fn: Function) => (req: Request, res: Response, next: Funct
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Apply security middleware stack
+  logger.info('Configuring security middleware');
+  
+  // Trust proxy for Railway deployment
+  app.set('trust proxy', 1);
+  
+  // Security headers
+  app.use(configureHelmet());
+  
+  // CORS configuration
+  app.use(configureCORS());
+  
+  // Request logging
+  app.use(requestLogger);
+  
+  // IP filtering (if configured)
+  app.use(ipFilter);
+  
+  // Rate limiting
+  app.use(generalRateLimit);
+  
+  // Request sanitization
+  app.use(sanitizeRequest);
+  
+  // Security audit logging
+  app.use(securityAudit);
+  
+  // Parse JSON with size limits
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+  
+  // Create default admin user on startup
+  try {
+    await createDefaultAdminUser();
+    logger.info('Database initialization completed');
+  } catch (error: any) {
+    logger.error('Failed to initialize database', { error: error.message });
+  }
+  
   // Health check endpoint for Railway
   app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0'
+    });
   });
 
-  // Stripe payment intent creation
-  app.post('/api/create-payment-intent', asyncHandler(async (req, res) => {
-    try {
-      const { amount, currency = 'aud', metadata } = req.body;
-      
-      if (!amount || amount < 50) {
-        return res.status(400).json({ message: 'Invalid amount' });
-      }
-
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
-        currency: currency,
-        metadata: metadata || {},
-        automatic_payment_methods: {
-          enabled: true,
-        },
-      });
-
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id
-      });
-    } catch (error: any) {
-      console.error('Payment intent creation error:', error);
-      res.status(400).json({ message: error.message || 'Failed to create payment intent' });
-    }
-  }));
-
-  // Auth routes
-  app.post('/api/auth/login', asyncHandler(async (req, res) => {
-    const { username, password } = req.body;
-    console.log(`Login attempt for user: ${username}`);
-    
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password are required' });
-    }
-    
-    try {
-      // For simplicity, let's use hardcoded credentials for our prototype
-      let user;
-      let role;
-      
-      if (username === 'adeelh' && password === '1P9Zqz7DIoKIqJx') {
-        // Admin user
-        user = {
-          id: 1,
-          username: 'adeelh',
-          email: 'adeelh@halalcert.org',
-          role: 'admin'
-        };
-        role = 'admin';
-        console.log('Admin login successful');
-      } else if (username === 'inspector' && password === 'inspector123') {
-        // Inspector user
-        user = {
-          id: 2,
-          username: 'inspector',
-          email: 'inspector@halalcert.org',
-          role: 'inspector'
-        };
-        role = 'inspector';
-        console.log('Inspector login successful');
-      } else {
-        console.log('Invalid credentials');
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-      
-      // Generate session token (in a real app, this would be JWT)
-      const session = {
-        userId: user.id,
-        username: user.username,
-        role: user.role
-      };
-      
-      // In a real app, we would sign this token 
-      // and set a secure, HTTP-only cookie
-      res.json({ 
-        message: 'Login successful',
-        user: {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          email: user.email
-        },
-        token: Buffer.from(JSON.stringify(session)).toString('base64')
-      });
-    } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ message: 'An error occurred during login' });
-    }
-  }));
-  
-  app.get('/api/auth/me', authMiddleware, asyncHandler(async (req, res) => {
-    try {
-      // Handle hardcoded admin and inspector users
-      if (req.user.username === 'adeelh') {
-        return res.json({
-          user: {
-            id: 1,
-            username: 'adeelh',
-            role: 'admin',
-            email: 'adeelh@halalcert.org'
-          }
+  // Stripe payment intent creation (with validation)
+  app.post('/api/create-payment-intent', 
+    speedLimiter,
+    validatePaymentIntent,
+    asyncHandler(async (req, res) => {
+      try {
+        const { amount, currency, metadata } = req.body;
+        
+        logger.info('Creating payment intent', {
+          amount,
+          currency,
+          ip: req.ip
         });
-      } else if (req.user.username === 'inspector') {
-        return res.json({
-          user: {
-            id: 2,
-            username: 'inspector',
-            role: 'inspector',
-            email: 'inspector@halalcert.org'
-          }
+
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: currency,
+          metadata: metadata || {},
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        });
+
+        logger.info('Payment intent created successfully', {
+          paymentIntentId: paymentIntent.id,
+          amount,
+          currency
+        });
+
+        res.json({
+          clientSecret: paymentIntent.client_secret,
+          paymentIntentId: paymentIntent.id
+        });
+      } catch (error: any) {
+        logger.error('Payment intent creation failed', {
+          error: error.message,
+          ip: req.ip
+        });
+        res.status(400).json({ 
+          error: 'Payment processing failed',
+          message: error.message || 'Failed to create payment intent' 
         });
       }
-      
-      // For other users, look up in the database
-      const userId = req.user.userId;
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(401).json({ message: 'User not found' });
-      }
-      
-      res.json({
-        user: {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          email: user.email
+    })
+  );
+
+  // Authentication routes with rate limiting
+  app.post('/api/auth/login', 
+    authRateLimit,
+    validateLogin,
+    asyncHandler(async (req, res) => {
+      try {
+        const { username, password } = req.body;
+        
+        logger.info('Login attempt', {
+          username,
+          ip: req.ip,
+          userAgent: req.get('User-Agent')
+        });
+        
+        // Authenticate user against database
+        const authResult = await authenticateUser(username, password);
+        
+        if (!authResult.success || !authResult.user) {
+          logger.warn('Login failed', {
+            username,
+            ip: req.ip,
+            reason: authResult.message
+          });
+          
+          return res.status(401).json({
+            error: 'Authentication failed',
+            message: authResult.message || 'Invalid credentials'
+          });
         }
-      });
-    } catch (error) {
-      console.error('Get user error:', error);
-      res.status(500).json({ message: 'An error occurred' });
-    }
-  }));
+        
+        // Generate secure JWT tokens
+        const accessToken = generateToken({
+          userId: authResult.user.id,
+          username: authResult.user.username,
+          role: authResult.user.role,
+          email: authResult.user.email
+        });
+        
+        const refreshToken = generateRefreshToken({
+          userId: authResult.user.id
+        });
+        
+        logger.info('Login successful', {
+          userId: authResult.user.id,
+          username: authResult.user.username,
+          role: authResult.user.role,
+          ip: req.ip
+        });
+        
+        res.json({
+          message: 'Login successful',
+          user: {
+            id: authResult.user.id,
+            username: authResult.user.username,
+            role: authResult.user.role,
+            email: authResult.user.email
+          },
+          accessToken,
+          refreshToken,
+          expiresIn: '24h'
+        });
+        
+      } catch (error: any) {
+        logger.error('Login error', {
+          error: error.message,
+          ip: req.ip,
+          username: req.body.username
+        });
+        
+        res.status(500).json({
+          error: 'Authentication error',
+          message: 'An error occurred during authentication'
+        });
+      }
+    })
+  );
+
+  // Register new inspector (admin only)
+  app.post('/api/auth/register',
+    authMiddleware,
+    requireRole(['admin']),
+    validateRegister,
+    asyncHandler(async (req, res) => {
+      try {
+        const { username, password, email, role } = req.body;
+        
+        logger.info('User registration attempt', {
+          username,
+          email,
+          role,
+          registeredBy: req.user?.userId,
+          ip: req.ip
+        });
+        
+        // Create new user
+        const result = await createInspectorUser({
+          username,
+          password,
+          email
+        });
+        
+        if (!result.success) {
+          logger.warn('User registration failed', {
+            username,
+            email,
+            reason: result.message,
+            registeredBy: req.user?.userId
+          });
+          
+          return res.status(400).json({
+            error: 'Registration failed',
+            message: result.message
+          });
+        }
+        
+        logger.info('User registered successfully', {
+          newUserId: result.userId,
+          username,
+          email,
+          registeredBy: req.user?.userId
+        });
+        
+        res.status(201).json({
+          message: result.message,
+          userId: result.userId
+        });
+        
+      } catch (error: any) {
+        logger.error('Registration error', {
+          error: error.message,
+          username: req.body.username,
+          registeredBy: req.user?.userId
+        });
+        
+        res.status(500).json({
+          error: 'Registration error',
+          message: 'An error occurred during registration'
+        });
+      }
+    })
+  );
+
+  // Get current user info
+  app.get('/api/auth/me', 
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+      try {
+        // User info is already validated by authMiddleware
+        const user = req.user!;
+        
+        logger.info('User info requested', {
+          userId: user.userId,
+          username: user.username,
+          ip: req.ip
+        });
+        
+        res.json({
+          user: {
+            id: user.userId,
+            username: user.username,
+            role: user.role,
+            email: user.email
+          }
+        });
+        
+      } catch (error: any) {
+        logger.error('Get user info error', {
+          error: error.message,
+          userId: req.user?.userId,
+          ip: req.ip
+        });
+        
+        res.status(500).json({
+          error: 'User info error',
+          message: 'An error occurred while fetching user information'
+        });
+      }
+    })
+  );
+
+  // Logout endpoint
+  app.post('/api/auth/logout',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+      try {
+        logger.info('User logout', {
+          userId: req.user?.userId,
+          username: req.user?.username,
+          ip: req.ip
+        });
+        
+        // In a real application, you would invalidate the JWT token
+        // by adding it to a blacklist or using short-lived tokens with refresh tokens
+        
+        res.json({
+          message: 'Logout successful'
+        });
+        
+      } catch (error: any) {
+        logger.error('Logout error', {
+          error: error.message,
+          userId: req.user?.userId
+        });
+        
+        res.status(500).json({
+          error: 'Logout error',
+          message: 'An error occurred during logout'
+        });
+      }
+    })
+  );
   
   // Token refresh endpoint
-  app.post('/api/auth/refresh', authMiddleware, asyncHandler(async (req, res) => {
-    try {
-      // In a real application, you would:
-      // 1. Verify the current token is still valid but about to expire
-      // 2. Generate a new JWT token with extended expiry
-      // For this prototype, we'll just generate a new base64 token
-      
-      const userData = {
-        username: req.user.username,
-        role: req.user.role,
-        timestamp: Date.now()
-      };
-      
-      const newToken = Buffer.from(JSON.stringify(userData)).toString('base64');
-      
-      res.json({
-        token: newToken,
-        user: {
-          id: req.user.userId,
-          username: req.user.username,
-          role: req.user.role,
-          email: req.user.username + '@halalcert.org'
+  app.post('/api/auth/refresh',
+    validate(z.object({
+      refreshToken: z.string().min(1, 'Refresh token is required')
+    })),
+    asyncHandler(async (req, res) => {
+      try {
+        const { refreshToken } = req.body;
+        
+        logger.info('Token refresh attempt', {
+          ip: req.ip,
+          userAgent: req.get('User-Agent')
+        });
+        
+        // Verify refresh token
+        const decoded = verifyRefreshToken(refreshToken);
+        
+        // Fetch user from database to ensure user still exists
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, decoded.userId))
+          .limit(1);
+        
+        if (!user) {
+          logger.warn('Token refresh failed: User not found', {
+            userId: decoded.userId,
+            ip: req.ip
+          });
+          
+          return res.status(401).json({
+            error: 'Token refresh failed',
+            message: 'User not found'
+          });
         }
-      });
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      res.status(500).json({ message: 'Failed to refresh token' });
-    }
-  }));
+        
+        // Generate new access token
+        const newAccessToken = generateToken({
+          userId: user.id,
+          username: user.username,
+          role: user.role,
+          email: user.email
+        });
+        
+        logger.info('Token refresh successful', {
+          userId: user.id,
+          username: user.username,
+          ip: req.ip
+        });
+        
+        res.json({
+          accessToken: newAccessToken,
+          expiresIn: '24h',
+          user: {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            email: user.email
+          }
+        });
+        
+      } catch (error: any) {
+        logger.error('Token refresh error', {
+          error: error.message,
+          ip: req.ip
+        });
+        
+        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+          return res.status(401).json({
+            error: 'Token refresh failed',
+            message: 'Invalid or expired refresh token'
+          });
+        }
+        
+        res.status(500).json({
+          error: 'Token refresh error',
+          message: 'An error occurred during token refresh'
+        });
+      }
+    })
+  );
   
   // Application routes
   app.post('/api/applications', upload.fields([
@@ -802,7 +1061,55 @@ Please ensure that you or an authorized representative is present during the ins
       res.status(500).json({ message: 'An error occurred' });
     }
   }));
-  
+
+  // Certificate PDF generation route
+  app.get('/api/certificates/:certificateNumber/pdf', asyncHandler(async (req, res) => {
+    try {
+      const certificateNumber = req.params.certificateNumber;
+      
+      // Get certificate data
+      const certificate = await storage.getCertificateByNumber(certificateNumber);
+      if (!certificate) {
+        return res.status(404).json({ message: 'Certificate not found' });
+      }
+
+      // Check if certificate is active
+      if (certificate.status !== 'active') {
+        return res.status(400).json({ message: 'Certificate is not active' });
+      }
+
+      // Get store information
+      const store = await storage.getStore(certificate.storeId);
+      if (!store) {
+        return res.status(404).json({ message: 'Store information not found' });
+      }
+
+      // Prepare certificate data for PDF generation
+      const certificateData = {
+        id: certificate.id.toString(),
+        storeName: store.name,
+        storeAddress: `${store.address}, ${store.city}`,
+        status: certificate.status,
+        certificateNumber: certificate.certificateNumber,
+        issuedDate: certificate.issuedDate.toISOString(),
+        expiryDate: certificate.expiryDate.toISOString(),
+        qrCodeUrl: certificate.qrCodeUrl || ''
+      };
+
+      // For now, return certificate data as JSON
+      // In a full implementation, this would generate the PDF using a library like Puppeteer
+      res.json({
+        message: 'Certificate data retrieved successfully',
+        certificate: certificateData,
+        downloadUrl: `/api/certificates/${certificateNumber}/pdf/download`
+      });
+
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      res.status(500).json({ message: 'An error occurred while generating PDF' });
+    }
+  }));
+
   // Admin API routes
   app.get('/api/admin/applications/pending', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
     try {
@@ -1525,6 +1832,11 @@ Halal Certification Authority`
 
     res.json({ received: true });
   }));
+
+  // Apply secure error handler as the last middleware
+  app.use(secureErrorHandler);
+  
+  logger.info('All routes and middleware configured successfully');
   
   // Create HTTP server
   const httpServer = createServer(app);

@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Helmet } from "react-helmet";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { inspectorApi, queryKeys, handleApiError } from "@/services/api";
 import ApplicationQueue from "@/components/dashboard/ApplicationQueue";
 import {
   Card,
@@ -11,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Tabs,
   TabsContent,
@@ -30,7 +33,7 @@ import {
   Pie,
   Legend,
 } from "recharts";
-import { Calendar, Clock, ClipboardList, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Clock, ClipboardList, CheckCircle, XCircle, Loader2, RefreshCw } from "lucide-react";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -38,87 +41,122 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Sample data for charts (in a real app, this would come from the API)
-  const applicationStatusData = [
-    { name: t("inspector.statuses.pending"), value: 12, color: "#FF8F00" },
-    { name: t("inspector.statuses.under_review"), value: 8, color: "#00796B" },
-    { name: t("inspector.statuses.approved"), value: 24, color: "#2E7D32" },
-    { name: t("inspector.statuses.rejected"), value: 4, color: "#C62828" },
+  // Fetch real data from APIs
+  const { data: dashboardData, isLoading: isDashboardLoading, error: dashboardError, refetch: refetchDashboard } = useQuery({
+    queryKey: queryKeys.inspectorStats,
+    queryFn: inspectorApi.getDashboardStats,
+    refetchInterval: 30000, // Refresh every 30 seconds
+    retry: 2
+  });
+
+  const { data: assignedApplications, isLoading: isApplicationsLoading } = useQuery({
+    queryKey: queryKeys.inspectorAssigned,
+    queryFn: inspectorApi.getAssignedApplications,
+    refetchInterval: 60000 // Refresh every minute
+  });
+
+  // Loading component
+  const LoadingSpinner = () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+
+  // Error component
+  const ErrorMessage = ({ error, onRetry }: { error: any, onRetry?: () => void }) => (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-center">
+        <p className="text-red-600 mb-2">Error loading data: {handleApiError(error)}</p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  // Process real data or use fallback
+  const applicationStatusData = dashboardData?.statusBreakdown || [
+    { name: t("inspector.statuses.pending"), value: 0, color: "#FF8F00" },
+    { name: t("inspector.statuses.under_review"), value: 0, color: "#00796B" },
+    { name: t("inspector.statuses.completed"), value: 0, color: "#2E7D32" },
   ];
 
-  const monthlyApplicationsData = [
-    { name: t("common.months.jan"), applications: 5 },
-    { name: t("common.months.feb"), applications: 8 },
-    { name: t("common.months.mar"), applications: 12 },
-    { name: t("common.months.apr"), applications: 10 },
-    { name: t("common.months.may"), applications: 15 },
-    { name: t("common.months.jun"), applications: 18 },
-    { name: t("common.months.jul"), applications: 14 },
-    { name: t("common.months.aug"), applications: 12 },
-    { name: t("common.months.sep"), applications: 9 },
-    { name: t("common.months.oct"), applications: 16 },
-    { name: t("common.months.nov"), applications: 11 },
-    { name: t("common.months.dec"), applications: 7 },
-  ];
+  // Generate monthly data based on available applications
+  const generateMonthlyData = (applications: any[]) => {
+    if (!applications) return [];
+    
+    const monthCounts = applications.reduce((acc, app) => {
+      const date = new Date(app.createdAt || app.assignedAt);
+      const month = date.getMonth();
+      acc[month] = (acc[month] || 0) + 1;
+      return acc;
+    }, {});
 
-  // Stats for summary cards
+    return [
+      { name: t("common.months.jan"), applications: monthCounts[0] || 0 },
+      { name: t("common.months.feb"), applications: monthCounts[1] || 0 },
+      { name: t("common.months.mar"), applications: monthCounts[2] || 0 },
+      { name: t("common.months.apr"), applications: monthCounts[3] || 0 },
+      { name: t("common.months.may"), applications: monthCounts[4] || 0 },
+      { name: t("common.months.jun"), applications: monthCounts[5] || 0 },
+      { name: t("common.months.jul"), applications: monthCounts[6] || 0 },
+      { name: t("common.months.aug"), applications: monthCounts[7] || 0 },
+      { name: t("common.months.sep"), applications: monthCounts[8] || 0 },
+      { name: t("common.months.oct"), applications: monthCounts[9] || 0 },
+      { name: t("common.months.nov"), applications: monthCounts[10] || 0 },
+      { name: t("common.months.dec"), applications: monthCounts[11] || 0 },
+    ];
+  };
+
+  const monthlyApplicationsData = generateMonthlyData(dashboardData?.applications);
+
+  // Stats for summary cards using real data
   const stats = [
     {
       title: t("inspector.stats.pending"),
-      value: "20",
+      value: dashboardData?.stats?.pendingInspections?.toString() || "0",
       icon: <ClipboardList className="h-6 w-6 text-primary" />,
       description: t("inspector.stats.pendingDesc"),
     },
     {
-      title: t("inspector.stats.scheduled"),
-      value: "8",
+      title: t("inspector.stats.underReview"),
+      value: dashboardData?.stats?.underReviewInspections?.toString() || "0",
       icon: <Calendar className="h-6 w-6 text-primary" />,
-      description: t("inspector.stats.scheduledDesc"),
+      description: t("inspector.stats.underReviewDesc"),
     },
     {
       title: t("inspector.stats.completed"),
-      value: "148",
+      value: dashboardData?.stats?.completedInspections?.toString() || "0",
       icon: <CheckCircle className="h-6 w-6 text-success" />,
       description: t("inspector.stats.completedDesc"),
     },
     {
-      title: t("inspector.stats.avgTime"),
-      value: "3.2",
+      title: t("inspector.stats.total"),
+      value: dashboardData?.stats?.totalInspections?.toString() || "0",
       icon: <Clock className="h-6 w-6 text-primary" />,
-      description: t("inspector.stats.avgTimeDesc"),
+      description: t("inspector.stats.totalDesc"),
     },
   ];
 
-  const recentActivity = [
-    {
-      id: 1,
-      action: t("inspector.activity.approved"),
-      store: "Zahrah Mediterranean Restaurant",
-      time: "2 hours ago",
-      status: "approved",
-    },
-    {
-      id: 2,
-      action: t("inspector.activity.scheduled"),
-      store: "Al Barakah Bakery",
-      time: "5 hours ago",
-      status: "pending",
-    },
-    {
-      id: 3,
-      action: t("inspector.activity.rejected"),
-      store: "Saffron Spice Market",
-      time: "1 day ago",
-      status: "rejected",
-    },
-    {
-      id: 4,
-      action: t("inspector.activity.reviewed"),
-      store: "Noor Halal Meats",
-      time: "2 days ago",
-      status: "under_review",
-    },
-  ];
+  // Process recent activity from assigned applications
+  const generateRecentActivity = (applications: any[]) => {
+    if (!applications) return [];
+    
+    return applications
+      .slice(0, 6) // Get latest 6 activities
+      .map((app: any, index: number) => ({
+        id: app.id || index,
+        action: `${t("inspector.activity.assigned")} inspection for`,
+        store: app.businessName || app.storeName || `Application ${app.id}`,
+        time: app.assignedAt ? new Date(app.assignedAt).toLocaleDateString() : "Recently",
+        status: app.status || "pending",
+      }));
+  };
+
+  const recentActivity = generateRecentActivity(assignedApplications);
 
   return (
     <>
@@ -143,22 +181,28 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <Card key={index}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-                        <h3 className="text-3xl font-bold mt-1">{stat.value}</h3>
-                      </div>
-                      <div className="p-2 bg-primary/10 rounded-full">{stat.icon}</div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">{stat.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {isDashboardLoading ? (
+              <LoadingSpinner />
+            ) : dashboardError ? (
+              <ErrorMessage error={dashboardError} onRetry={refetchDashboard} />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {stats.map((stat, index) => (
+                    <Card key={index}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">{stat.title}</p>
+                            <h3 className="text-3xl font-bold mt-1">{stat.value}</h3>
+                          </div>
+                          <div className="p-2 bg-primary/10 rounded-full">{stat.icon}</div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">{stat.description}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
@@ -214,9 +258,11 @@ const Dashboard = () => {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+                </div>
 
-            <ApplicationQueue />
+                <ApplicationQueue />
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="applications">

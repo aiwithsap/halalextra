@@ -526,7 +526,18 @@
       "active": "Active",
       "expired": "Expired",
       "revoked": "Revoked"
-    }
+    },
+    "officialHalalCertificate": "Official Halal Certificate",
+    "certificationAuthority": "Halal Certification Authority",
+    "halalDeclaration": "This is to certify that the above-mentioned establishment complies with the Halal standards and requirements as prescribed by the Islamic dietary laws. This certificate is valid for the period specified below.",
+    "issuedDate": "Issued Date",
+    "expiryDate": "Expiry Date",
+    "scanToVerify": "Scan QR Code to Verify Certificate",
+    "qrCodeAlt": "QR Code for certificate verification",
+    "verificationInstructions": "Visit our website or scan this code to verify the authenticity of this certificate",
+    "printForDisplay": "Print for Display",
+    "downloadPDF": "Download PDF",
+    "previewPDF": "Preview PDF"
   },
   "certificates": {
     "title": "Certificates",
