@@ -163,8 +163,11 @@ export const authRateLimit = rateLimit({
  * Speed limiting middleware for large file uploads
  */
 export const speedLimiter = slowDown({
-  ...SECURITY_CONFIG.slowDown,
-  onLimitReached: (req, res) => {
+  windowMs: SECURITY_CONFIG.slowDown.windowMs,
+  delayAfter: SECURITY_CONFIG.slowDown.delayAfter,
+  delayMs: () => SECURITY_CONFIG.slowDown.delayMs, // Updated syntax for v2
+  validate: { delayMs: false }, // Disable deprecation warning
+  onLimitReached: (req, res, options) => {
     securityLogger.warn('Speed limit reached, slowing down requests', {
       ip: req.ip,
       userAgent: req.get('User-Agent'),

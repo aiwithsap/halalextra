@@ -2,7 +2,7 @@
 command = "npm run build"
 
 [deploy]
-startCommand = "npm run db:push && npm start"
+startCommand = "npm run railway:start"
 
 [[services]]
 name = "halalextra-app"

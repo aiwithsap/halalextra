@@ -107,7 +107,13 @@ async function validateSecuritySettings() {
   }
   
   if (!process.env.SESSION_SECRET) {
-    errors.push('SESSION_SECRET environment variable is required');
+    if (process.env.NODE_ENV === 'production') {
+      errors.push('SESSION_SECRET environment variable is required in production');
+    } else {
+      warnings.push('SESSION_SECRET not set - using fallback for development');
+      // Set a development fallback
+      process.env.SESSION_SECRET = 'development-session-secret-change-in-production';
+    }
   }
   
   if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL?.startsWith('postgres')) {
