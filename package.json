@@ -9,7 +9,7 @@
     "build:minimal": "vite build && esbuild server/minimal.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "start:minimal": "NODE_ENV=production node dist/minimal.js",
-    "railway:start": "npm run build && npm run security:migrate && npm start",
+    "railway:start": "npm run build && npm start",
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "security:migrate": "tsx scripts/migrate-security.ts",
