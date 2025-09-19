@@ -4,7 +4,7 @@ import { createServer } from "http";
 const app = express();
 app.use(express.json());
 
-// Basic health check
+// API routes first
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
@@ -13,15 +13,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Basic route for testing
-app.get('/', (req, res) => {
-  res.json({ message: 'HalalExtra API is running' });
-});
-
-// Serve static files
+// Serve static files (React build)
 app.use(express.static('dist/client'));
 
-// Catch-all for SPA
+// Catch-all for SPA routing (React Router)
 app.get('*', (req, res) => {
   res.sendFile('index.html', { root: 'dist/client' });
 });
