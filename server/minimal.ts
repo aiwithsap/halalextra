@@ -14,11 +14,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve static files (React build)
-app.use(express.static('dist/client'));
+app.use(express.static('dist/public'));
 
 // Catch-all for SPA routing (React Router)
 app.get('*', (req, res) => {
-  res.sendFile('index.html', { root: 'dist/client' });
+  res.sendFile('index.html', { root: 'dist/public' });
 });
 
 const server = createServer(app);
