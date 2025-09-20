@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 
+import 'dotenv/config';
 import { db } from "../server/db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -12,11 +13,10 @@ const DEFAULT_ADMIN_EMAIL = "admin@halalextra.com";
 async function createAdminUser() {
   console.log("🔧 Creating admin user...");
 
-  // Skip in development if no real database is available
-  if (process.env.NODE_ENV !== "production" &&
-      process.env.DATABASE_URL === 'postgresql://dev:dev@localhost:5432/halalextra_dev') {
-    console.log("⚠️  Skipping admin creation in development environment without real database");
-    console.log("ℹ️  This script will run automatically in production with the Railway database");
+  // Skip only if database URL indicates a fallback placeholder
+  if (process.env.DATABASE_URL?.includes('localhost:5432') && process.env.NODE_ENV !== "production") {
+    console.log("⚠️  Skipping admin creation - using fallback database configuration");
+    console.log("ℹ️  Set up a proper database connection to create admin user");
     return;
   }
 

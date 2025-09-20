@@ -1,3 +1,4 @@
+import 'dotenv/config';
 console.log("🚀 STARTUP: Loading imports...");
 import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";

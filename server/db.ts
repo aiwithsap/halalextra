@@ -1,11 +1,7 @@
 console.log("📊 DB: Loading database imports...");
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
-
-console.log("📊 DB: Configuring neon websocket...");
-neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
   if (process.env.NODE_ENV === 'production') {
@@ -39,8 +35,8 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
-console.log("📊 DB: Creating connection pool...");
+console.log("📊 DB: Creating PostgreSQL connection pool...");
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-console.log("📊 DB: Initializing Drizzle ORM...");
+console.log("📊 DB: Initializing Drizzle ORM with PostgreSQL driver...");
 export const db = drizzle({ client: pool, schema });
 console.log("✅ DB: Database configuration complete!");
