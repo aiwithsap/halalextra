@@ -1,6 +1,11 @@
+console.log("🔗 ROUTES: Loading imports...");
 import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+console.log("🔗 ROUTES: Basic imports loaded");
+
 import { storage } from "./storage";
+console.log("🔗 ROUTES: Storage module loaded");
+
 import { 
   authMiddleware, 
   requireRole, 
@@ -11,9 +16,14 @@ import {
   createInspectorUser,
   createDefaultAdminUser 
 } from "./auth";
+console.log("🔗 ROUTES: Auth module loaded");
+
 import { sendEmail } from "./email";
 import { generateQRCode, generateCertificateNumber } from "./utils";
+console.log("🔗 ROUTES: Email and utils loaded");
+
 import { db } from "./db";
+console.log("🔗 ROUTES: Database loaded");
 import { eq, desc } from "drizzle-orm";
 import { 
   users,
@@ -102,7 +112,11 @@ const asyncHandler = (fn: Function) => (req: Request, res: Response, next: Funct
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  console.log("🔗 ROUTES: Starting route registration...");
+  console.log("🔗 ROUTES: Importing all dependencies completed");
+  
   // Apply security middleware stack
+  console.log("🔗 ROUTES: Configuring security middleware...");
   logger.info('Configuring security middleware');
   
   // Trust proxy for Railway deployment
