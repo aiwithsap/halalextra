@@ -197,9 +197,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("❌ DEBUG: Database error:", error.message);
+      
+      // Parse DATABASE_URL to show connection details (safely)
+      const dbUrl = process.env.DATABASE_URL;
+      let connectionInfo = 'DATABASE_URL not set';
+      if (dbUrl) {
+        try {
+          const url = new URL(dbUrl);
+          connectionInfo = {
+            protocol: url.protocol,
+            hostname: url.hostname,
+            port: url.port || 'default',
+            database: url.pathname.slice(1),
+            username: url.username || 'none'
+          };
+        } catch (parseError) {
+          connectionInfo = 'Invalid DATABASE_URL format';
+        }
+      }
+      
       res.status(500).json({
         databaseConnection: 'FAILED',
         error: error.message,
+        connectionInfo,
         usersTableExists: false,
         timestamp: new Date().toISOString()
       });
