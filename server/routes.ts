@@ -150,12 +150,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create default admin user on startup (non-blocking)
   createDefaultAdminUser()
     .then(() => {
+      console.log("✅ ROUTES: Default admin user creation completed");
       logger.info('Database initialization completed');
     })
     .catch((error: any) => {
+      console.error("❌ ROUTES: Failed to create default admin user:", error.message);
       logger.error('Failed to initialize database', { error: error.message });
       // Don't crash the application if database is not available
     });
+
+  // Debug endpoint for admin credentials (temporary)
+  app.get('/api/debug/admin', (req, res) => {
+    res.status(200).json({
+      expectedCredentials: {
+        username: 'admin',
+        password: process.env.DEFAULT_ADMIN_PASSWORD || 'admin123'
+      },
+      environmentCheck: {
+        DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD ? '***SET***' : 'MISSING'
+      },
+      timestamp: new Date().toISOString()
+    });
+  });
   
   // Health check endpoint for Railway
   app.get('/api/health', (req, res) => {

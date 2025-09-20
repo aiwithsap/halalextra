@@ -13,6 +13,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug endpoint for admin user setup
+app.get('/api/debug/admin', (req, res) => {
+  res.status(200).json({
+    adminPassword: process.env.DEFAULT_ADMIN_PASSWORD || 'admin123',
+    expectedCredentials: {
+      username: 'admin',
+      password: process.env.DEFAULT_ADMIN_PASSWORD || 'admin123'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Diagnostic endpoint to check Railway environment
 app.get('/api/diagnostics', (req, res) => {
   // Get all environment variable names (filtered for security)
