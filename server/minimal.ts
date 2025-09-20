@@ -13,6 +13,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Diagnostic endpoint to check Railway environment
+app.get('/api/diagnostics', (req, res) => {
+  res.status(200).json({
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT,
+      DATABASE_URL: process.env.DATABASE_URL ? '***SET***' : 'MISSING',
+      JWT_SECRET: process.env.JWT_SECRET ? '***SET***' : 'MISSING',
+      SESSION_SECRET: process.env.SESSION_SECRET ? '***SET***' : 'MISSING',
+      DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD ? '***SET***' : 'MISSING'
+    },
+    system: {
+      platform: process.platform,
+      nodeVersion: process.version,
+      memory: process.memoryUsage(),
+      uptime: process.uptime()
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Serve static files (React build)
 app.use(express.static('dist/public'));
 
