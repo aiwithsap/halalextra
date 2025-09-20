@@ -172,6 +172,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString()
     });
   });
+
+  // Debug endpoint to check database state
+  app.get('/api/debug/database', asyncHandler(async (req, res) => {
+    try {
+      console.log("🔍 DEBUG: Checking database state...");
+      
+      // Try to count users
+      const userCount = await db.select().from(users);
+      console.log("🔍 DEBUG: User count query successful, users found:", userCount.length);
+      
+      res.status(200).json({
+        databaseConnection: 'SUCCESS',
+        usersTableExists: true,
+        totalUsers: userCount.length,
+        users: userCount.map(u => ({
+          id: u.id,
+          username: u.username,
+          email: u.email,
+          role: u.role,
+          createdAt: u.createdAt
+        })),
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("❌ DEBUG: Database error:", error.message);
+      res.status(500).json({
+        databaseConnection: 'FAILED',
+        error: error.message,
+        usersTableExists: false,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }));
   
   // Health check endpoint for Railway
   app.get('/api/health', (req, res) => {
