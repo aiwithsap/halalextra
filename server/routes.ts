@@ -25,13 +25,15 @@ console.log("🔗 ROUTES: Email and utils loaded");
 import { db } from "./db";
 console.log("🔗 ROUTES: Database loaded");
 import { eq, desc } from "drizzle-orm";
-import { 
+import {
   users,
-  inspections, 
-  applications, 
-  stores, 
-  documents, 
-  inspectionPhotos 
+  inspections,
+  applications,
+  stores,
+  documents,
+  inspectionPhotos,
+  certificates,
+  feedback
 } from "@shared/schema";
 import multer from "multer";
 import path from "path";
