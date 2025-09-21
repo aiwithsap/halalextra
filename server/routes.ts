@@ -72,10 +72,26 @@ import { requestLogger, createLogger } from "./logger";
 
 const logger = createLogger('routes');
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-12-18.acacia',
-});
+// Initialize Stripe with graceful handling for demo mode
+const isDemoMode = process.env.DEMO_MODE === 'true';
+let stripe: Stripe | null = null;
+
+if (!isDemoMode && process.env.STRIPE_SECRET_KEY) {
+  try {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-12-18.acacia',
+    });
+    console.log("✅ Stripe initialized successfully");
+  } catch (error) {
+    console.error("❌ Stripe initialization failed:", error);
+    console.log("🔄 Continuing without Stripe (payments disabled)");
+  }
+} else {
+  console.log(isDemoMode ?
+    "🎭 DEMO MODE: Stripe disabled, payments will be bypassed" :
+    "⚠️ STRIPE_SECRET_KEY not provided, payments disabled"
+  );
+}
 
 // Configure secure multer for file uploads
 const upload = multer({ 
@@ -235,19 +251,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Stripe payment intent creation (with validation)
-  app.post('/api/create-payment-intent', 
+  // Stripe payment intent creation (with validation and demo mode bypass)
+  app.post('/api/create-payment-intent',
     speedLimiter,
     validatePaymentIntent,
     asyncHandler(async (req, res) => {
       try {
         const { amount, currency, metadata } = req.body;
-        
+
         logger.info('Creating payment intent', {
           amount,
           currency,
+          demoMode: isDemoMode,
           ip: req.ip
         });
+
+        // Demo mode bypass
+        if (isDemoMode) {
+          const mockPaymentIntentId = `demo_pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+          logger.info('Demo mode: Mock payment intent created', {
+            paymentIntentId: mockPaymentIntentId,
+            amount,
+            currency
+          });
+
+          return res.json({
+            clientSecret: `demo_secret_${mockPaymentIntentId}`,
+            paymentIntentId: mockPaymentIntentId,
+            demoMode: true
+          });
+        }
+
+        // Check if Stripe is available
+        if (!stripe) {
+          logger.error('Payment processing unavailable', {
+            reason: 'Stripe not initialized',
+            ip: req.ip
+          });
+          return res.status(503).json({
+            error: 'Payment processing unavailable',
+            message: 'Payment processing is currently disabled'
+          });
+        }
 
         const paymentIntent = await stripe.paymentIntents.create({
           amount: amount,
@@ -273,9 +319,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: error.message,
           ip: req.ip
         });
-        res.status(400).json({ 
+        res.status(400).json({
           error: 'Payment processing failed',
-          message: error.message || 'Failed to create payment intent' 
+          message: error.message || 'Failed to create payment intent'
         });
       }
     })
@@ -590,20 +636,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         suppliers: JSON.parse(req.body.suppliers || '[]')
       };
 
-      // Validate payment if paymentIntentId is provided
+      // Validate payment if paymentIntentId is provided (with demo mode bypass)
       let paymentRecord = null;
       if (applicationData.paymentIntentId) {
-        try {
-          const paymentIntent = await stripe.paymentIntents.retrieve(applicationData.paymentIntentId);
-          if (paymentIntent.status !== 'succeeded') {
-            return res.status(400).json({ message: 'Payment not completed' });
-          }
+        // Demo mode bypass for payment validation
+        if (isDemoMode || applicationData.paymentIntentId.startsWith('demo_pi_')) {
+          console.log('🎭 DEMO MODE: Bypassing payment verification for payment intent:', applicationData.paymentIntentId);
+          paymentRecord = null; // No need to create payment record in demo mode
+        } else {
+          try {
+            if (!stripe) {
+              return res.status(503).json({ message: 'Payment processing unavailable' });
+            }
 
-          // Check if payment record already exists
-          paymentRecord = await storage.getPaymentByIntentId(applicationData.paymentIntentId);
-        } catch (error) {
-          console.error('Payment verification error:', error);
-          return res.status(400).json({ message: 'Payment verification failed' });
+            const paymentIntent = await stripe.paymentIntents.retrieve(applicationData.paymentIntentId);
+            if (paymentIntent.status !== 'succeeded') {
+              return res.status(400).json({ message: 'Payment not completed' });
+            }
+
+            // Check if payment record already exists
+            paymentRecord = await storage.getPaymentByIntentId(applicationData.paymentIntentId);
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            return res.status(400).json({ message: 'Payment verification failed' });
+          }
         }
       }
       
@@ -662,38 +718,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentIntentId: applicationData.paymentIntentId
       });
 
-      // Create or update payment record if payment was made
-      if (applicationData.paymentIntentId) {
+      // Create or update payment record if payment was made (with demo mode handling)
+      if (applicationData.paymentIntentId && !isDemoMode && !applicationData.paymentIntentId.startsWith('demo_pi_')) {
         try {
-          const paymentIntent = await stripe.paymentIntents.retrieve(applicationData.paymentIntentId);
-          
-          if (paymentRecord) {
-            // Payment record exists (created by webhook), update with application ID and customer info
-            await storage.updatePaymentStatus(paymentRecord.id, paymentRecord.status, {
-              ...(paymentRecord.metadata || {}),
-              applicationId: application.id,
-              customerEmail: store.ownerEmail,
-              customerName: store.ownerName
-            });
+          if (!stripe) {
+            console.warn('Cannot process payment record: Stripe not initialized');
           } else {
-            // Create new payment record
-            await storage.createPayment({
-              paymentIntentId: applicationData.paymentIntentId,
-              applicationId: application.id,
-              amount: paymentIntent.amount,
-              currency: paymentIntent.currency,
-              status: paymentIntent.status,
-              paymentMethod: paymentIntent.payment_method_types[0] || null,
-              customerEmail: store.ownerEmail,
-              customerName: store.ownerName,
-              stripeCustomerId: paymentIntent.customer as string || null,
-              metadata: paymentIntent.metadata || {}
-            });
+            const paymentIntent = await stripe.paymentIntents.retrieve(applicationData.paymentIntentId);
+
+            if (paymentRecord) {
+              // Payment record exists (created by webhook), update with application ID and customer info
+              await storage.updatePaymentStatus(paymentRecord.id, paymentRecord.status, {
+                ...(paymentRecord.metadata || {}),
+                applicationId: application.id,
+                customerEmail: store.ownerEmail,
+                customerName: store.ownerName
+              });
+            } else {
+              // Create new payment record
+              await storage.createPayment({
+                paymentIntentId: applicationData.paymentIntentId,
+                applicationId: application.id,
+                amount: paymentIntent.amount,
+                currency: paymentIntent.currency,
+                status: paymentIntent.status,
+                paymentMethod: paymentIntent.payment_method_types[0] || null,
+                customerEmail: store.ownerEmail,
+                customerName: store.ownerName,
+                stripeCustomerId: paymentIntent.customer as string || null,
+                metadata: paymentIntent.metadata || {}
+              });
+            }
           }
         } catch (error) {
           console.error('Error handling payment record:', error);
           // Don't fail the application creation if payment recording fails
         }
+      } else if (isDemoMode && applicationData.paymentIntentId) {
+        console.log('🎭 DEMO MODE: Skipping payment record creation for demo payment:', applicationData.paymentIntentId);
       }
       
       // Send confirmation email
@@ -1793,8 +1855,19 @@ Halal Certification Authority`
     }
   }));
 
-  // Stripe webhook handler
+  // Stripe webhook handler (with demo mode handling)
   app.post('/api/webhooks/stripe', asyncHandler(async (req, res) => {
+    // Skip webhook processing in demo mode
+    if (isDemoMode) {
+      console.log('🎭 DEMO MODE: Ignoring Stripe webhook');
+      return res.json({ received: true, demoMode: true });
+    }
+
+    if (!stripe) {
+      console.error('Stripe webhook received but Stripe not initialized');
+      return res.status(503).json({ message: 'Stripe not available' });
+    }
+
     const sig = req.headers['stripe-signature'] as string;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
