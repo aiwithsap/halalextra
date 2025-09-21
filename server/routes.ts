@@ -1855,6 +1855,87 @@ Halal Certification Authority`
     }
   }));
 
+  // Inspector Dashboard API endpoints
+  app.get('/api/inspector/stats', authMiddleware, requireRole(['inspector']), asyncHandler(async (req, res) => {
+    try {
+      // @ts-ignore - user is added by authMiddleware
+      const inspectorId = req.user.userId;
+
+      // Get all inspections for this inspector
+      const inspectorInspections = await db
+        .select()
+        .from(inspections)
+        .where(eq(inspections.inspectorId, inspectorId));
+
+      // Calculate stats
+      const total = inspectorInspections.length;
+      const completed = inspectorInspections.filter((i: any) => i.status === 'completed').length;
+      const pending = inspectorInspections.filter((i: any) => i.status === 'scheduled').length;
+      const underReview = inspectorInspections.filter((i: any) => i.status === 'in_progress').length;
+
+      res.json({
+        stats: {
+          totalInspections: total,
+          completedInspections: completed,
+          pendingInspections: pending,
+          underReviewInspections: underReview
+        },
+        statusBreakdown: [
+          { name: 'Pending', value: pending, color: '#FF8F00' },
+          { name: 'Under Review', value: underReview, color: '#00796B' },
+          { name: 'Completed', value: completed, color: '#2E7D32' }
+        ]
+      });
+    } catch (error: any) {
+      console.error('Get inspector stats error:', error);
+      res.status(500).json({ message: 'Failed to get inspector stats' });
+    }
+  }));
+
+  // Admin Dashboard API endpoints
+  app.get('/api/admin/stats', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      // Get applications count
+      const applicationsList = await db.select().from(applications);
+      const totalApplications = applicationsList.length;
+
+      // Calculate status breakdown
+      const statusCounts = applicationsList.reduce((acc: any, app: any) => {
+        acc[app.status] = (acc[app.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Get certificates count
+      const certificatesList = await db.select().from(certificates);
+      const activeCertificates = certificatesList.filter((cert: any) => cert.status === 'active').length;
+
+      // Get pending feedback
+      const pendingFeedbackList = await db
+        .select()
+        .from(feedback)
+        .where(eq(feedback.status, 'pending'));
+
+      res.json({
+        stats: {
+          totalApplications,
+          pendingApplications: statusCounts.pending || 0,
+          activeCertificates,
+          pendingFeedback: pendingFeedbackList.length
+        },
+        applications: applicationsList,
+        statusBreakdown: [
+          { name: 'Pending', value: statusCounts.pending || 0, color: '#FF8F00' },
+          { name: 'Under Review', value: statusCounts.under_review || 0, color: '#00796B' },
+          { name: 'Approved', value: statusCounts.approved || 0, color: '#2E7D32' },
+          { name: 'Rejected', value: statusCounts.rejected || 0, color: '#C62828' }
+        ]
+      });
+    } catch (error: any) {
+      console.error('Get admin stats error:', error);
+      res.status(500).json({ message: 'Failed to get admin stats' });
+    }
+  }));
+
   // Stripe webhook handler (with demo mode handling)
   app.post('/api/webhooks/stripe', asyncHandler(async (req, res) => {
     // Skip webhook processing in demo mode

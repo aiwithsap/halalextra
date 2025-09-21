@@ -25,42 +25,7 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
 // Admin API calls
 export const adminApi = {
   getDashboardStats: async () => {
-    // Get multiple data sources and aggregate
-    try {
-      const [applications, pendingApps] = await Promise.all([
-        apiRequest('/api/applications'),
-        apiRequest('/api/admin/applications/pending')
-      ]);
-
-      // Process data for dashboard stats
-      const totalApplications = applications?.length || 0;
-      const pendingApplications = pendingApps?.length || 0;
-      
-      // Calculate status breakdown
-      const statusCounts = applications?.reduce((acc: any, app: any) => {
-        acc[app.status] = (acc[app.status] || 0) + 1;
-        return acc;
-      }, {}) || {};
-
-      return {
-        stats: {
-          totalApplications,
-          pendingApplications,
-          activeCertificates: 128, // This would come from certificates API
-          pendingFeedback: 15 // This would come from feedback API
-        },
-        applications: applications || [],
-        statusBreakdown: [
-          { name: 'Pending', value: statusCounts.pending || 0, color: '#FF8F00' },
-          { name: 'Under Review', value: statusCounts.under_review || 0, color: '#00796B' },
-          { name: 'Approved', value: statusCounts.approved || 0, color: '#2E7D32' },
-          { name: 'Rejected', value: statusCounts.rejected || 0, color: '#C62828' }
-        ]
-      };
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      throw error;
-    }
+    return apiRequest('/api/admin/stats');
   },
 
   getPendingApplications: async () => {
@@ -100,33 +65,7 @@ export const inspectorApi = {
   },
 
   getDashboardStats: async () => {
-    try {
-      const assignedApplications = await apiRequest('/api/inspections/assigned');
-      
-      // Process applications for stats
-      const total = assignedApplications?.length || 0;
-      const completed = assignedApplications?.filter((app: any) => app.status === 'completed').length || 0;
-      const pending = assignedApplications?.filter((app: any) => app.status === 'pending').length || 0;
-      const underReview = assignedApplications?.filter((app: any) => app.status === 'under_review').length || 0;
-
-      return {
-        stats: {
-          totalInspections: total,
-          completedInspections: completed,
-          pendingInspections: pending,
-          underReviewInspections: underReview
-        },
-        applications: assignedApplications || [],
-        statusBreakdown: [
-          { name: 'Pending', value: pending, color: '#FF8F00' },
-          { name: 'Under Review', value: underReview, color: '#00796B' },
-          { name: 'Completed', value: completed, color: '#2E7D32' }
-        ]
-      };
-    } catch (error) {
-      console.error('Error fetching inspector stats:', error);
-      throw error;
-    }
+    return apiRequest('/api/inspector/stats');
   },
 
   startInspection: async (id: string) => {

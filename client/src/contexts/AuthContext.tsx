@@ -87,10 +87,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       const data = await response.json();
-      
-      // Save token to localStorage
-      localStorage.setItem("token", data.token);
-      setToken(data.token);
+
+      // Save token to localStorage (backend sends accessToken, not token)
+      localStorage.setItem("token", data.accessToken);
+      setToken(data.accessToken);
       
       // Set user state
       setUser(data.user);
@@ -126,19 +126,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshToken = async () => {
     try {
       if (!token) return;
-      
+
+      // Note: For simplicity, we're using the access token to refresh
+      // In a production app, you'd store separate refresh tokens
       const response = await fetch("/api/auth/refresh", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
-        }
+        },
+        body: JSON.stringify({ refreshToken: token })
       });
       
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
+        localStorage.setItem("token", data.accessToken);
+        setToken(data.accessToken);
         // Update user data if provided
         if (data.user) {
           setUser(data.user);

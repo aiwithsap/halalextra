@@ -1,0 +1,10 @@
+{
+  "homepage": true,
+  "applicationForm": false,
+  "fileUploads": false,
+  "loginForm": false,
+  "qrVerification": false,
+  "adminDashboard": false,
+  "inspectorDashboard": false,
+  "timestamp": "2025-09-21T10:15:34.230Z"
+}

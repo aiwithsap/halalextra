@@ -72,6 +72,9 @@ function AppRouter() {
       <Route path="/unauthorized" component={Unauthorized} />
       
       {/* Admin Routes */}
+      <Route path="/admin">
+        <ProtectedRoute component={AdminDashboard} roles={['admin']} />
+      </Route>
       <Route path="/admin/dashboard">
         <ProtectedRoute component={AdminDashboard} roles={['admin']} />
       </Route>
@@ -81,8 +84,11 @@ function AppRouter() {
       <Route path="/admin/feedback">
         <ProtectedRoute component={FeedbackModeration} roles={['admin']} />
       </Route>
-      
+
       {/* Inspector Routes */}
+      <Route path="/inspector">
+        <ProtectedRoute component={InspectorDashboard} roles={['inspector']} />
+      </Route>
       <Route path="/inspector/dashboard">
         <ProtectedRoute component={InspectorDashboard} roles={['inspector']} />
       </Route>

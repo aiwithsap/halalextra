@@ -61,12 +61,31 @@ export const configureHelmet = () => {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://cdn.jsdelivr.net"
+        ],
+        fontSrc: [
+          "'self'",
+          "https://fonts.gstatic.com",
+          "https://cdn.jsdelivr.net"
+        ],
         imgSrc: ["'self'", "data:", "https:"],
-        scriptSrc: ["'self'"],
-        connectSrc: ["'self'", "https://api.stripe.com"],
+        scriptSrc: [
+          "'self'",
+          "https://js.stripe.com",
+          "https://replit.com"
+        ],
+        connectSrc: [
+          "'self'",
+          "https://api.stripe.com",
+          "wss://halalextra-production.up.railway.app"
+        ],
         frameSrc: ["'self'", "https://js.stripe.com"],
+        manifestSrc: ["'self'"],
+        workerSrc: ["'self'", "blob:"],
       },
     },
     hsts: {
