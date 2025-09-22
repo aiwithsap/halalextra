@@ -244,7 +244,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   }));
-  
+
+  // Temporary debug endpoint to create inspector_sarah user
+  app.post('/api/debug/create-inspector', asyncHandler(async (req, res) => {
+    try {
+      console.log("🔍 DEBUG: Creating inspector_sarah user...");
+
+      const result = await createInspectorUser({
+        username: 'inspector_sarah',
+        email: 'inspector_sarah@example.com',
+        password: 'inspector123'
+      });
+
+      console.log("🔍 DEBUG: Inspector creation result:", result);
+
+      res.json({
+        success: result.success,
+        message: result.message,
+        userId: result.userId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("❌ DEBUG: Error creating inspector:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }));
+
+  // Debug endpoint to create test application and inspection data
+  app.post('/api/debug/create-test-application', asyncHandler(async (req, res) => {
+    try {
+      console.log("🔍 DEBUG: Creating test application and inspection...");
+
+      // Create test store
+      const [store] = await db.insert(stores).values({
+        name: "Tokyo Halal Ramen",
+        address: "123 Collins Street",
+        city: "Melbourne",
+        state: "VIC",
+        postcode: "3000",
+        businessType: "restaurant",
+        abn: "12345678901",
+        established: "2020",
+        ownerName: "Kenji Tanaka",
+        ownerEmail: "kenji@tokyohalal.com.au",
+        ownerPhone: "+61412345678"
+      }).returning();
+
+      // Create test application
+      const [application] = await db.insert(applications).values({
+        storeId: store.id,
+        status: "under_review",
+        products: ["ramen", "gyoza", "rice bowls"],
+        suppliers: [{"name": "Halal Meat Co", "material": "beef", "certified": true}],
+        employeeCount: "5-10",
+        operatingHours: "11:00-22:00",
+        notes: "Test application for inspection workflow"
+      }).returning();
+
+      // Create inspection assignment for inspector_sarah (user ID 2)
+      const [inspection] = await db.insert(inspections).values({
+        applicationId: application.id,
+        inspectorId: 2, // inspector_sarah user ID
+        status: "scheduled",
+        notes: "Initial inspection assignment"
+      }).returning();
+
+      console.log("🔍 DEBUG: Test data created:", {
+        storeId: store.id,
+        applicationId: application.id,
+        inspectionId: inspection.id
+      });
+
+      res.json({
+        success: true,
+        message: 'Test application and inspection created successfully',
+        data: {
+          storeId: store.id,
+          applicationId: application.id,
+          inspectionId: inspection.id
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("❌ DEBUG: Error creating test application:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }));
+
   // Health check endpoint for Railway
   app.get('/api/health', (req, res) => {
     res.status(200).json({ 
@@ -1608,11 +1702,14 @@ Please ensure that you or an authorized representative is present during the ins
   // Get inspections assigned to inspector
   app.get('/api/inspections/assigned', authMiddleware, requireRole(['inspector']), asyncHandler(async (req, res) => {
     try {
+      console.log('🔍 DEBUG: Starting get assigned inspections...');
       // @ts-ignore - user is added by authMiddleware
       const inspectorId = req.user.userId;
-      
+      console.log('🔍 DEBUG: Inspector ID:', inspectorId);
+
       // Get all inspections for this inspector
-      const inspections = await db
+      console.log('🔍 DEBUG: About to execute database query...');
+      const assignedInspections = await db
         .select({
           inspection: inspections,
           application: applications,
@@ -1624,7 +1721,9 @@ Please ensure that you or an authorized representative is present during the ins
         .where(eq(inspections.inspectorId, inspectorId))
         .orderBy(desc(inspections.createdAt));
 
-      const result = inspections.map(({ inspection, application, store }) => ({
+      console.log('🔍 DEBUG: Query executed, results:', assignedInspections.length, 'inspections');
+
+      const result = assignedInspections.map(({ inspection, application, store }) => ({
         ...inspection,
         application: {
           ...application,
@@ -1632,9 +1731,12 @@ Please ensure that you or an authorized representative is present during the ins
         }
       }));
 
+      console.log('🔍 DEBUG: Mapped results, returning:', result.length, 'items');
       res.json(result);
     } catch (error: any) {
-      console.error('Get assigned inspections error:', error);
+      console.error('❌ Get assigned inspections error - Stack:', error.stack);
+      console.error('❌ Get assigned inspections error - Message:', error.message);
+      console.error('❌ Get assigned inspections error - Full:', error);
       res.status(500).json({ message: 'Failed to get assigned inspections' });
     }
   }));

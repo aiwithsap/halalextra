@@ -13,7 +13,7 @@ const SECURITY_CONFIG = {
   // Rate limiting configuration
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX || '100'), // limit each IP to 100 requests per windowMs
+    max: process.env.NODE_ENV === 'development' ? 1000 : parseInt(process.env.RATE_LIMIT_MAX || '100'), // higher limit for dev mode
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -21,17 +21,17 @@ const SECURITY_CONFIG = {
   // Slow down configuration
   slowDown: {
     windowMs: parseInt(process.env.SLOW_DOWN_WINDOW_MS || '900000'), // 15 minutes
-    delayAfter: parseInt(process.env.SLOW_DOWN_DELAY_AFTER || '50'), // allow 50 requests per windowMs without delay
+    delayAfter: process.env.NODE_ENV === 'development' ? 500 : parseInt(process.env.SLOW_DOWN_DELAY_AFTER || '50'), // higher threshold for dev mode
     delayMs: parseInt(process.env.SLOW_DOWN_DELAY_MS || '500'), // add 500ms delay per request after delayAfter
   },
   
   // CORS configuration
   cors: {
-    origin: process.env.ALLOWED_ORIGINS ? 
-      process.env.ALLOWED_ORIGINS.split(',') : 
-      (process.env.NODE_ENV === 'production' ? 
-        ['https://halalextra-production.up.railway.app'] : 
-        ['http://localhost:5173', 'http://127.0.0.1:5173']
+    origin: process.env.ALLOWED_ORIGINS ?
+      process.env.ALLOWED_ORIGINS.split(',') :
+      (process.env.NODE_ENV === 'production' ?
+        ['https://halalextra-production.up.railway.app'] :
+        ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3001', 'http://127.0.0.1:3001']
       ),
     credentials: true,
     optionsSuccessStatus: 200,
@@ -77,12 +77,12 @@ export const configureHelmet = () => {
           "'self'",
           "https://js.stripe.com",
           "https://replit.com"
-        ],
+        ].concat(process.env.NODE_ENV === 'development' ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
         connectSrc: [
           "'self'",
           "https://api.stripe.com",
           "wss://halalextra-production.up.railway.app"
-        ],
+        ].concat(process.env.NODE_ENV === 'development' ? ["ws://localhost:*", "ws://127.0.0.1:*"] : []),
         frameSrc: ["'self'", "https://js.stripe.com"],
         manifestSrc: ["'self'"],
         workerSrc: ["'self'", "blob:"],

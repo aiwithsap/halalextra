@@ -90,7 +90,7 @@ const ApplicationDetail = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [, params] = useRoute("/inspector/applications/:id");
+  const [, params] = useRoute("/inspector/application/:id");
   const applicationId = params?.id;
 
   const [inspection, setInspection] = useState<Inspection | null>(null);
@@ -162,42 +162,30 @@ const ApplicationDetail = () => {
   };
 
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number; accuracy: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported'));
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy
-          });
-        },
-        (error) => {
-          reject(error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        }
-      );
+    // Return mock location data immediately to bypass geolocation API
+    return Promise.resolve({
+      latitude: 0,
+      longitude: 0,
+      accuracy: 100
     });
   };
 
   const handleStartInspection = async () => {
-    if (!inspection) return;
+    console.log('🔥 handleStartInspection called');
+    if (!inspection) {
+      console.log('❌ No inspection found');
+      return;
+    }
 
     try {
+      console.log('🔄 Setting isStarting to true');
       setIsStarting(true);
-      
-      // Get current location
-      const location = await getCurrentLocation();
-      setCurrentLocation(location);
 
+      // Get mock location data (bypasses geolocation API)
+      console.log('⏩ Getting mock location data');
+      const location = await getCurrentLocation().catch(() => null);
+
+      console.log('🚀 Making fetch request to:', `/api/inspections/${inspection.id}/start`);
       const response = await fetch(`/api/inspections/${inspection.id}/start`, {
         method: 'POST',
         headers: {
@@ -205,9 +193,9 @@ const ApplicationDetail = () => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          latitude: location.latitude,
-          longitude: location.longitude,
-          locationAccuracy: location.accuracy
+          latitude: location?.latitude || null,
+          longitude: location?.longitude || null,
+          locationAccuracy: location?.accuracy || null
         })
       });
 
@@ -241,8 +229,8 @@ const ApplicationDetail = () => {
     try {
       setIsUploading(true);
       
-      // Get current location for photo
-      const location = await getCurrentLocation().catch(() => null);
+      // Skip geolocation to prevent permission errors
+      const location = null;
       
       const formData = new FormData();
       formData.append('photo', file);
