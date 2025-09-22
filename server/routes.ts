@@ -18,6 +18,7 @@ import {
 } from "./auth";
 console.log("🔗 ROUTES: Auth module loaded");
 
+import bcrypt from 'bcryptjs';
 import { sendEmail } from "./email";
 import { generateQRCode, generateCertificateNumber } from "./utils";
 console.log("🔗 ROUTES: Email and utils loaded");
@@ -2072,6 +2073,98 @@ Halal Certification Authority`
     }
 
     res.json({ received: true });
+  }));
+
+  // Admin endpoint to create users (inspectors/admins)
+  app.post('/api/admin/users', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const { username, email, password, role } = req.body;
+
+      if (!username || !email || !password || !role) {
+        return res.status(400).json({ error: 'All fields required: username, email, password, role' });
+      }
+
+      if (!['inspector', 'admin'].includes(role)) {
+        return res.status(400).json({ error: 'Role must be inspector or admin' });
+      }
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const newUser = await db.insert(users).values({
+        username,
+        email,
+        password: hashedPassword,
+        role
+      }).returning();
+
+      res.status(201).json({
+        message: 'User created successfully',
+        user: {
+          id: newUser[0].id,
+          username: newUser[0].username,
+          email: newUser[0].email,
+          role: newUser[0].role
+        }
+      });
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      if (error.code === '23505') { // Unique constraint violation
+        return res.status(409).json({ error: 'Username already exists' });
+      }
+      res.status(500).json({ error: 'Failed to create user' });
+    }
+  }));
+
+  // Admin endpoint to assign inspector to application
+  app.post('/api/admin/applications/:id/assign', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const applicationId = parseInt(req.params.id);
+      const { inspectorId } = req.body;
+
+      if (!inspectorId) {
+        return res.status(400).json({ error: 'Inspector ID required' });
+      }
+
+      // Verify inspector exists and has inspector role
+      const inspector = await db.select().from(users).where(eq(users.id, inspectorId)).limit(1);
+      if (inspector.length === 0 || inspector[0].role !== 'inspector') {
+        return res.status(404).json({ error: 'Inspector not found' });
+      }
+
+      // Create or update inspection record
+      const existingInspection = await db.select().from(inspections)
+        .where(eq(inspections.applicationId, applicationId)).limit(1);
+
+      if (existingInspection.length > 0) {
+        // Update existing inspection
+        await db.update(inspections)
+          .set({ inspectorId })
+          .where(eq(inspections.applicationId, applicationId));
+      } else {
+        // Create new inspection
+        await db.insert(inspections).values({
+          applicationId,
+          inspectorId
+        });
+      }
+
+      // Update application status to under_review
+      await db.update(applications)
+        .set({ status: 'under_review' })
+        .where(eq(applications.id, applicationId));
+
+      res.json({
+        message: 'Inspector assigned successfully',
+        applicationId,
+        inspectorId,
+        inspectorName: inspector[0].username
+      });
+    } catch (error: any) {
+      console.error('Error assigning inspector:', error);
+      res.status(500).json({ error: 'Failed to assign inspector' });
+    }
   }));
 
   // Apply secure error handler as the last middleware
