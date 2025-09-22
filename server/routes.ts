@@ -2075,45 +2075,29 @@ Halal Certification Authority`
     res.json({ received: true });
   }));
 
-  // Admin endpoint to create users (inspectors/admins)
+  // Admin endpoint to create inspector users
   app.post('/api/admin/users', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
     try {
-      const { username, email, password, role } = req.body;
+      const { username, email, password } = req.body;
 
-      if (!username || !email || !password || !role) {
-        return res.status(400).json({ error: 'All fields required: username, email, password, role' });
+      if (!username || !email || !password) {
+        return res.status(400).json({ error: 'All fields required: username, email, password' });
       }
 
-      if (!['inspector', 'admin'].includes(role)) {
-        return res.status(400).json({ error: 'Role must be inspector or admin' });
+      // Use existing createInspectorUser function
+      const result = await createInspectorUser({ username, email, password });
+
+      if (result.success) {
+        res.status(201).json({
+          message: result.message,
+          userId: result.userId
+        });
+      } else {
+        res.status(400).json({ error: result.message });
       }
-
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create user
-      const newUser = await db.insert(users).values({
-        username,
-        email,
-        password: hashedPassword,
-        role
-      }).returning();
-
-      res.status(201).json({
-        message: 'User created successfully',
-        user: {
-          id: newUser[0].id,
-          username: newUser[0].username,
-          email: newUser[0].email,
-          role: newUser[0].role
-        }
-      });
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      if (error.code === '23505') { // Unique constraint violation
-        return res.status(409).json({ error: 'Username already exists' });
-      }
-      res.status(500).json({ error: 'Failed to create user' });
+      console.error('Error creating inspector:', error);
+      res.status(500).json({ error: 'Failed to create inspector' });
     }
   }));
 
