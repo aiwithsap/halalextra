@@ -26,6 +26,8 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
   const [isProcessing, setIsProcessing] = useState(false);
   const [clientSecret, setClientSecret] = useState("");
   const [paymentAmount] = useState(100); // $1.00 AUD in cents
+  const [demoMode, setDemoMode] = useState(false);
+  const [paymentIntentId, setPaymentIntentId] = useState("");
 
   useEffect(() => {
     // Only create payment intent if we don't already have one
@@ -55,8 +57,10 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
           throw new Error('Failed to create payment intent');
         }
 
-        const { clientSecret } = await response.json();
-        setClientSecret(clientSecret);
+        const data = await response.json();
+        setClientSecret(data.clientSecret);
+        setDemoMode(data.demoMode || false);
+        setPaymentIntentId(data.paymentIntentId || "");
       } catch (error) {
         console.error('Error creating payment intent:', error);
         toast({
@@ -75,7 +79,7 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
   const handlePayment = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!stripe || !elements || !clientSecret) {
+    if (!clientSecret) {
       toast({
         title: t("payment.errorTitle"),
         description: t("payment.stripeNotLoadedError"),
@@ -86,14 +90,38 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
 
     setIsProcessing(true);
 
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      setIsProcessing(false);
-      return;
-    }
-
     try {
-      // Confirm payment
+      // Handle demo mode - bypass Stripe.js processing
+      if (demoMode) {
+        console.log('Demo mode: Simulating successful payment');
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        toast({
+          title: t("payment.successTitle"),
+          description: t("payment.successMessage"),
+        });
+        onPaymentSuccess(paymentIntentId);
+        return;
+      }
+
+      // Regular Stripe processing for production mode
+      if (!stripe || !elements) {
+        toast({
+          title: t("payment.errorTitle"),
+          description: t("payment.stripeNotLoadedError"),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        setIsProcessing(false);
+        return;
+      }
+
+      // Confirm payment with Stripe
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardElement,
@@ -199,13 +227,22 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePayment} className="space-y-4">
-            <div className="p-4 border rounded-lg">
-              <CardElement options={cardElementOptions} />
-            </div>
-            
+            {demoMode ? (
+              <div className="p-4 border rounded-lg bg-yellow-50 border-yellow-200">
+                <div className="text-center text-yellow-800">
+                  <p className="font-medium">🔧 Demo Mode</p>
+                  <p className="text-sm">No real payment required - click "Pay Now" to simulate payment</p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 border rounded-lg">
+                <CardElement options={cardElementOptions} />
+              </div>
+            )}
+
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Shield className="h-4 w-4" />
-              <span>{t("payment.securePayment")}</span>
+              <span>{demoMode ? "Demo Payment - No Charges Applied" : t("payment.securePayment")}</span>
             </div>
 
             <div className="flex gap-3 pt-4">
@@ -221,7 +258,7 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
               
               <Button
                 type="submit"
-                disabled={!stripe || isProcessing || !clientSecret}
+                disabled={(!demoMode && !stripe) || isProcessing || !clientSecret}
                 className="flex-1"
               >
                 {isProcessing ? (
