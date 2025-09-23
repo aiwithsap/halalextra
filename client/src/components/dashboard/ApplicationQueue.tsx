@@ -2,15 +2,16 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import {
   Card,
@@ -40,6 +41,7 @@ interface Application {
 const ApplicationQueue = () => {
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
+  const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   
   const { data, isLoading, isError, refetch } = useQuery({
@@ -92,10 +94,12 @@ const ApplicationQueue = () => {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{t("inspector.applicationQueue")}</CardTitle>
+        <CardTitle>
+          {user?.role === 'admin' ? t("dashboard.admin.tabs.applications") : t("inspector.applicationQueue")}
+        </CardTitle>
         <div className="flex space-x-2">
-          <Select 
-            value={statusFilter} 
+          <Select
+            value={statusFilter}
             onValueChange={setStatusFilter}
           >
             <SelectTrigger className="w-[140px]">
@@ -105,6 +109,12 @@ const ApplicationQueue = () => {
               <SelectItem value="all">{t("inspector.allStatus")}</SelectItem>
               <SelectItem value="pending">{t("certificate.statuses.pending")}</SelectItem>
               <SelectItem value="under_review">{t("certificate.statuses.under_review")}</SelectItem>
+              {user?.role === 'admin' && (
+                <>
+                  <SelectItem value="approved">{t("certificate.statuses.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("certificate.statuses.rejected")}</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
           <Button 
@@ -168,16 +178,24 @@ const ApplicationQueue = () => {
                     {t("inspector.applied")}: {format(new Date(application.createdAt), "dd MMM yyyy")}
                   </span>
                   <div className="flex space-x-2">
-                    <Link href={`/inspector/application/${application.id}`}>
+                    <Link href={user?.role === 'admin' ? `/admin/application/${application.id}` : `/inspector/application/${application.id}`}>
                       <Button variant="outline" size="sm" className="h-8">
                         <Eye className="h-4 w-4 mr-1" /> {t("common.view")}
                       </Button>
                     </Link>
-                    <Link href={`/inspector/application/${application.id}?tab=schedule`}>
-                      <Button variant="outline" size="sm" className="h-8">
-                        <Calendar className="h-4 w-4 mr-1" /> {t("inspector.schedule")}
-                      </Button>
-                    </Link>
+                    {user?.role === 'admin' ? (
+                      <Link href={`/admin/application/${application.id}?tab=manage`}>
+                        <Button variant="outline" size="sm" className="h-8">
+                          <Calendar className="h-4 w-4 mr-1" /> {t("common.edit")}
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link href={`/inspector/application/${application.id}?tab=schedule`}>
+                        <Button variant="outline" size="sm" className="h-8">
+                          <Calendar className="h-4 w-4 mr-1" /> {t("inspector.schedule")}
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

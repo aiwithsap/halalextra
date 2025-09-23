@@ -884,7 +884,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/api/applications', authMiddleware, requireRole(['inspector', 'admin']), asyncHandler(async (req, res) => {
     try {
-      const applications = await storage.getPendingApplications();
+      // Admin users see all applications, inspectors see only pending ones
+      const applications = req.user?.role === 'admin'
+        ? await storage.getAllApplications()
+        : await storage.getPendingApplications();
       res.json({ applications });
     } catch (error) {
       console.error('Get applications error:', error);

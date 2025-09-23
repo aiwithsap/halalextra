@@ -31,6 +31,7 @@ export interface IStorage {
   // Application operations
   getApplication(id: number): Promise<Application | undefined>;
   getApplicationsByStoreId(storeId: number): Promise<Application[]>;
+  getAllApplications(): Promise<(Application & { store: Store })[]>;
   getPendingApplications(): Promise<(Application & { store: Store })[]>;
   createApplication(application: InsertApplication): Promise<Application>;
   updateApplicationStatus(id: number, status: string, notes?: string): Promise<Application>;
@@ -190,6 +191,14 @@ export class MemStorage implements IStorage {
 
   async getApplicationsByStoreId(storeId: number): Promise<Application[]> {
     return Array.from(this.applications.values()).filter(app => app.storeId === storeId);
+  }
+
+  async getAllApplications(): Promise<(Application & { store: Store })[]> {
+    return Array.from(this.applications.values())
+      .map(app => {
+        const store = this.stores.get(app.storeId)!;
+        return { ...app, store };
+      });
   }
 
   async getPendingApplications(): Promise<(Application & { store: Store })[]> {
@@ -540,6 +549,21 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(applications).where(eq(applications.storeId, storeId));
   }
 
+  async getAllApplications(): Promise<(Application & { store: Store })[]> {
+    const allApps = await db
+      .select({
+        application: applications,
+        store: stores
+      })
+      .from(applications)
+      .innerJoin(stores, eq(applications.storeId, stores.id));
+
+    return allApps.map(({ application, store }) => ({
+      ...application,
+      store
+    }));
+  }
+
   async getPendingApplications(): Promise<(Application & { store: Store })[]> {
     const pendingApps = await db
       .select({
@@ -554,7 +578,7 @@ export class DatabaseStorage implements IStorage {
           eq(applications.status, 'under_review')
         )
       );
-    
+
     return pendingApps.map(({ application, store }) => ({
       ...application,
       store
