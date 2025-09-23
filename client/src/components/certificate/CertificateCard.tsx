@@ -23,14 +23,28 @@ const CertificateCard: React.FC<CertificateProps> = ({ certificate }) => {
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
 
-  // Format dates
+  // Format dates with error handling
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
-    }).format(date);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date string:', dateString);
+      return 'Invalid Date';
+    }
+
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }).format(date);
+    } catch (error) {
+      console.error('Date formatting error:', error, dateString);
+      return 'Format Error';
+    }
   };
 
   return (

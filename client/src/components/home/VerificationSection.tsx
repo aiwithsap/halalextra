@@ -50,13 +50,13 @@ const VerificationSection = ({ initialCertificateNumber }: VerificationSectionPr
       if (response.ok) {
         const data = await response.json();
         setCertificate({
-          id: data.certificate.id,
-          storeName: data.certificate.businessName,
-          storeAddress: data.certificate.businessAddress,
+          id: data.certificate.certificateNumber || 'unknown',
+          storeName: data.store.name,
+          storeAddress: `${data.store.address}, ${data.store.city}, ${data.store.state} ${data.store.postcode}`,
           status: data.certificate.status,
           certificateNumber: data.certificate.certificateNumber,
-          issuedDate: data.certificate.issuedAt,
-          expiryDate: data.certificate.expiresAt
+          issuedDate: data.certificate.issuedDate,
+          expiryDate: data.certificate.expiryDate
         });
       } else {
         setCertificate(null);
