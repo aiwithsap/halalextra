@@ -154,28 +154,28 @@ const Dashboard = () => {
   // Stats for summary cards using real data
   const stats = [
     {
-      title: t("admin.stats.applications"),
+      title: t("dashboard.admin.stats.applications"),
       value: dashboardData?.stats?.totalApplications?.toString() || "0",
       icon: <ClipboardList className="h-6 w-6 text-primary" />,
       change: "+12%", // Would calculate from historical data
       changeUp: true,
     },
     {
-      title: t("admin.stats.activeCertificates"),
+      title: t("dashboard.admin.stats.activeCertificates"),
       value: dashboardData?.stats?.activeCertificates?.toString() || "0",
       icon: <IdCard className="h-6 w-6 text-success" />,
       change: "+5%", // Would calculate from historical data
       changeUp: true,
     },
     {
-      title: t("admin.stats.pendingFeedback"),
+      title: t("dashboard.admin.stats.pendingFeedback"),
       value: pendingFeedback?.length?.toString() || "0",
       icon: <MessageSquare className="h-6 w-6 text-warning" />,
       change: "-23%", // Would calculate from historical data
       changeUp: false,
     },
     {
-      title: t("admin.stats.inspectors"),
+      title: t("dashboard.admin.stats.inspectors"),
       value: "8", // Would come from users API
       icon: <Users className="h-6 w-6 text-primary" />,
       change: "0%",
@@ -190,24 +190,24 @@ const Dashboard = () => {
   const alerts = [
     {
       id: 1,
-      title: t("admin.alerts.expiringCertificates"),
-      description: t("admin.alerts.expiringCertificatesDesc", { count: 12 }),
+      title: t("dashboard.admin.alerts.expiringCertificates"),
+      description: t("dashboard.admin.alerts.expiringCertificatesDesc", { count: 12 }),
       icon: <Clock className="h-5 w-5 text-warning" />,
       color: "bg-warning/10 text-warning",
     },
     {
       id: 2,
-      title: t("admin.alerts.pendingFeedback"),
-      description: t("admin.alerts.pendingFeedbackDesc", { count: feedbackCount }),
+      title: t("dashboard.admin.alerts.pendingFeedback"),
+      description: t("dashboard.admin.alerts.pendingFeedbackDesc", { count: feedbackCount }),
       icon: <MessageSquare className="h-5 w-5 text-primary" />,
       color: "bg-primary/10 text-primary",
       action: "/admin/feedback",
-      actionText: t("admin.alerts.moderateNow"),
+      actionText: t("dashboard.admin.alerts.moderateNow"),
     },
     {
       id: 3,
-      title: t("admin.alerts.securityAlert"),
-      description: t("admin.alerts.securityAlertDesc"),
+      title: t("dashboard.admin.alerts.securityAlert"),
+      description: t("dashboard.admin.alerts.securityAlertDesc"),
       icon: <ShieldAlert className="h-5 w-5 text-destructive" />,
       color: "bg-destructive/10 text-destructive",
     },
@@ -216,24 +216,24 @@ const Dashboard = () => {
   return (
     <>
       <Helmet>
-        <title>{t("admin.dashboard")}</title>
-        <meta name="description" content={t("meta.admin.dashboard.description")} />
+        <title>{t("dashboard.admin.title")}</title>
+        <meta name="description" content={t("dashboard.admin.description")} />
       </Helmet>
 
       <div className="container mx-auto px-4 py-8">
         <div className={`mb-8 ${isRtl ? "rtl text-right" : ""}`}>
           <h1 className="text-3xl font-bold text-gray-800">
-            {t("admin.welcomeMessage", { name: user?.username || "" })}
+            {t("dashboard.admin.welcomeMessage", { name: user?.username || "" })}
           </h1>
-          <p className="text-gray-600 mt-1">{t("admin.dashboardDescription")}</p>
+          <p className="text-gray-600 mt-1">{t("dashboard.admin.dashboardDescription")}</p>
         </div>
 
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="grid grid-cols-4 max-w-lg">
-            <TabsTrigger value="overview">{t("admin.tabs.overview")}</TabsTrigger>
-            <TabsTrigger value="applications">{t("admin.tabs.applications")}</TabsTrigger>
-            <TabsTrigger value="certificates">{t("admin.tabs.certificates")}</TabsTrigger>
-            <TabsTrigger value="users">{t("admin.tabs.users")}</TabsTrigger>
+            <TabsTrigger value="overview">{t("dashboard.admin.tabs.overview")}</TabsTrigger>
+            <TabsTrigger value="applications">{t("dashboard.admin.tabs.applications")}</TabsTrigger>
+            <TabsTrigger value="certificates">{t("dashboard.admin.tabs.certificates")}</TabsTrigger>
+            <TabsTrigger value="users">{t("dashboard.admin.tabs.users")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -259,7 +259,7 @@ const Dashboard = () => {
                             <span className={`text-xs ${stat.changeUp === true ? 'text-success' : stat.changeUp === false ? 'text-destructive' : 'text-gray-500'}`}>
                               {stat.change} {stat.changeUp !== null && (stat.changeUp ? '↑' : '↓')}
                             </span>
-                            <span className="text-xs text-gray-500 ml-1">{t("admin.stats.fromLastMonth")}</span>
+                            <span className="text-xs text-gray-500 ml-1">{t("dashboard.admin.stats.fromLastMonth")}</span>
                           </div>
                         )}
                       </CardContent>
@@ -270,8 +270,8 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="md:col-span-2">
                 <CardHeader>
-                  <CardTitle>{t("admin.charts.applicationVsCertification")}</CardTitle>
-                  <CardDescription>{t("admin.charts.applicationVsCertificationDesc")}</CardDescription>
+                  <CardTitle>{t("dashboard.admin.charts.applicationVsCertification")}</CardTitle>
+                  <CardDescription>{t("dashboard.admin.charts.applicationVsCertificationDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-80">
@@ -293,13 +293,13 @@ const Dashboard = () => {
                           dataKey="applications"
                           stroke="#00796B"
                           activeDot={{ r: 8 }}
-                          name={t("admin.charts.applications")}
+                          name={t("dashboard.admin.charts.applications")}
                         />
                         <Line
                           type="monotone"
                           dataKey="certifications"
                           stroke="#D4AF37"
-                          name={t("admin.charts.certifications")}
+                          name={t("dashboard.admin.charts.certifications")}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -309,8 +309,8 @@ const Dashboard = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("admin.alerts.title")}</CardTitle>
-                  <CardDescription>{t("admin.alerts.description")}</CardDescription>
+                  <CardTitle>{t("dashboard.admin.alerts.title")}</CardTitle>
+                  <CardDescription>{t("dashboard.admin.alerts.description")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -341,8 +341,8 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("admin.charts.applicationStatus")}</CardTitle>
-                  <CardDescription>{t("admin.charts.applicationStatusDesc")}</CardDescription>
+                  <CardTitle>{t("dashboard.admin.charts.applicationStatus")}</CardTitle>
+                  <CardDescription>{t("dashboard.admin.charts.applicationStatusDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-64">
@@ -372,8 +372,8 @@ const Dashboard = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("admin.charts.certificateStatus")}</CardTitle>
-                  <CardDescription>{t("admin.charts.certificateStatusDesc")}</CardDescription>
+                  <CardTitle>{t("dashboard.admin.charts.certificateStatus")}</CardTitle>
+                  <CardDescription>{t("dashboard.admin.charts.certificateStatusDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-64">
@@ -404,8 +404,8 @@ const Dashboard = () => {
             
                 <Card>
                   <CardHeader>
-                    <CardTitle>{t("admin.feedback.title")}</CardTitle>
-                    <CardDescription>{t("admin.feedback.description")}</CardDescription>
+                    <CardTitle>{t("dashboard.admin.feedback.title")}</CardTitle>
+                    <CardDescription>{t("dashboard.admin.feedback.description")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isFeedbackLoading ? (
@@ -415,9 +415,9 @@ const Dashboard = () => {
                         <div className="bg-primary/5 p-4 rounded-lg">
                           <h3 className="font-medium flex items-center">
                             <MessageSquare className="h-5 w-5 mr-2 text-primary" />
-                            {t("admin.feedback.pendingModeration", { count: feedbackCount })}
+                            {t("dashboard.admin.feedback.pendingModeration", { count: feedbackCount })}
                           </h3>
-                          <p className="text-sm text-gray-600 mt-1">{t("admin.feedback.pendingModerationDesc")}</p>
+                          <p className="text-sm text-gray-600 mt-1">{t("dashboard.admin.feedback.pendingModerationDesc")}</p>
                         </div>
                       </div>
                     )}
@@ -425,7 +425,7 @@ const Dashboard = () => {
                   <CardFooter>
                     <Link href="/admin/feedback">
                       <Button className="w-full">
-                        {t("admin.feedback.moderateButton")}
+                        {t("dashboard.admin.feedback.moderateButton")}
                       </Button>
                     </Link>
                   </CardFooter>
@@ -441,12 +441,12 @@ const Dashboard = () => {
           <TabsContent value="certificates">
             <Card>
               <CardHeader>
-                <CardTitle>{t("admin.certificates.title")}</CardTitle>
-                <CardDescription>{t("admin.certificates.description")}</CardDescription>
+                <CardTitle>{t("dashboard.admin.certificates.title")}</CardTitle>
+                <CardDescription>{t("dashboard.admin.certificates.description")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-12">
-                  <p className="text-gray-500">{t("admin.certificates.comingSoon")}</p>
+                  <p className="text-gray-500">{t("dashboard.admin.certificates.comingSoon")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -455,12 +455,12 @@ const Dashboard = () => {
           <TabsContent value="users">
             <Card>
               <CardHeader>
-                <CardTitle>{t("admin.users.title")}</CardTitle>
-                <CardDescription>{t("admin.users.description")}</CardDescription>
+                <CardTitle>{t("dashboard.admin.users.title")}</CardTitle>
+                <CardDescription>{t("dashboard.admin.users.description")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-12">
-                  <p className="text-gray-500">{t("admin.users.comingSoon")}</p>
+                  <p className="text-gray-500">{t("dashboard.admin.users.comingSoon")}</p>
                 </div>
               </CardContent>
             </Card>
