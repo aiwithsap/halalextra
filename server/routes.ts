@@ -2417,6 +2417,295 @@ Halal Certification Authority`
     }
   }));
 
+  // ============================================
+  // User Management Endpoints (Phase 2)
+  // ============================================
+
+  // Admin endpoint to list all users with pagination and filtering
+  app.get('/api/admin/users', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const roleFilter = req.query.role as string;
+      const search = req.query.search as string;
+
+      const offset = (page - 1) * limit;
+
+      // Build query
+      let query = db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        role: users.role,
+        createdAt: users.createdAt,
+        isActive: users.isActive
+      }).from(users);
+
+      // Apply role filter if provided
+      if (roleFilter && ['admin', 'inspector', 'store_owner'].includes(roleFilter)) {
+        query = query.where(eq(users.role, roleFilter));
+      }
+
+      // Execute query with pagination
+      const allUsers = await query;
+
+      // Apply search filter if provided (in-memory for simplicity)
+      let filteredUsers = allUsers;
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredUsers = allUsers.filter(user =>
+          user.username.toLowerCase().includes(searchLower) ||
+          (user.email && user.email.toLowerCase().includes(searchLower))
+        );
+      }
+
+      // Apply pagination
+      const paginatedUsers = filteredUsers.slice(offset, offset + limit);
+
+      res.json({
+        users: paginatedUsers,
+        page,
+        limit,
+        total: filteredUsers.length
+      });
+    } catch (error: any) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  }));
+
+  // Admin endpoint to create a new user
+  app.post('/api/admin/users', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const { username, email, password, role } = req.body;
+
+      // Validation
+      if (!username || !password || !role) {
+        return res.status(400).json({ error: 'Username, password, and role are required' });
+      }
+
+      if (!['admin', 'inspector', 'store_owner'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role. Must be admin, inspector, or store_owner' });
+      }
+
+      // Check if username already exists
+      const existingUser = await db.select().from(users).where(eq(users.username, username)).limit(1);
+      if (existingUser.length > 0) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+
+      // Check if email already exists (if provided)
+      if (email) {
+        const existingEmail = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        if (existingEmail.length > 0) {
+          return res.status(400).json({ error: 'Email already exists' });
+        }
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const [newUser] = await db.insert(users).values({
+        username,
+        email: email || null,
+        password: hashedPassword,
+        role,
+        isActive: true,
+        createdAt: new Date()
+      }).returning();
+
+      // Create audit log
+      await storage.createAuditLog({
+        action: 'user_created',
+        entity: 'user',
+        entityId: newUser.id,
+        userId: req.user.id,
+        details: { username, role },
+        ipAddress: req.ip
+      });
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = newUser;
+
+      res.status(201).json({
+        user: userWithoutPassword,
+        message: 'User created successfully'
+      });
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ error: 'Failed to create user' });
+    }
+  }));
+
+  // Admin endpoint to update user details
+  app.patch('/api/admin/users/:id', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { username, email, role, isActive } = req.body;
+
+      // Prevent admin from modifying themselves in dangerous ways
+      if (userId === req.user.id) {
+        if (role && role !== 'admin') {
+          return res.status(403).json({ error: 'Cannot change your own role from admin' });
+        }
+        if (isActive === false) {
+          return res.status(403).json({ error: 'Cannot deactivate yourself' });
+        }
+      }
+
+      // Check if user exists
+      const [existingUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!existingUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Build update object
+      const updates: any = {};
+      if (username && username !== existingUser.username) {
+        // Check if new username is taken
+        const duplicate = await db.select().from(users).where(eq(users.username, username)).limit(1);
+        if (duplicate.length > 0 && duplicate[0].id !== userId) {
+          return res.status(400).json({ error: 'Username already exists' });
+        }
+        updates.username = username;
+      }
+      if (email !== undefined) {
+        if (email && email !== existingUser.email) {
+          // Check if new email is taken
+          const duplicate = await db.select().from(users).where(eq(users.email, email)).limit(1);
+          if (duplicate.length > 0 && duplicate[0].id !== userId) {
+            return res.status(400).json({ error: 'Email already exists' });
+          }
+        }
+        updates.email = email || null;
+      }
+      if (role && ['admin', 'inspector', 'store_owner'].includes(role)) {
+        updates.role = role;
+      }
+      if (typeof isActive === 'boolean') {
+        updates.isActive = isActive;
+      }
+
+      // Update user
+      const [updatedUser] = await db.update(users)
+        .set(updates)
+        .where(eq(users.id, userId))
+        .returning();
+
+      // Create audit log
+      await storage.createAuditLog({
+        action: 'user_updated',
+        entity: 'user',
+        entityId: userId,
+        userId: req.user.id,
+        details: { updates },
+        ipAddress: req.ip
+      });
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = updatedUser;
+
+      res.json({
+        user: userWithoutPassword,
+        message: 'User updated successfully'
+      });
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ error: 'Failed to update user' });
+    }
+  }));
+
+  // Admin endpoint to reset user password
+  app.patch('/api/admin/users/:id/password', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { newPassword } = req.body;
+
+      if (!newPassword) {
+        return res.status(400).json({ error: 'New password is required' });
+      }
+
+      // Password strength validation (at least 8 characters)
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+      }
+
+      // Check if user exists
+      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await db.update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, userId));
+
+      // Create audit log
+      await storage.createAuditLog({
+        action: 'password_reset',
+        entity: 'user',
+        entityId: userId,
+        userId: req.user.id,
+        details: { username: user.username },
+        ipAddress: req.ip
+      });
+
+      res.json({
+        message: 'Password reset successfully'
+      });
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      res.status(500).json({ error: 'Failed to reset password' });
+    }
+  }));
+
+  // Admin endpoint to deactivate/activate user (soft delete)
+  app.delete('/api/admin/users/:id', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+
+      // Prevent admin from deleting themselves
+      if (userId === req.user.id) {
+        return res.status(403).json({ error: 'Cannot deactivate yourself' });
+      }
+
+      // Check if user exists
+      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Toggle active status
+      const newStatus = !user.isActive;
+      await db.update(users)
+        .set({ isActive: newStatus })
+        .where(eq(users.id, userId));
+
+      // Create audit log
+      await storage.createAuditLog({
+        action: newStatus ? 'user_activated' : 'user_deactivated',
+        entity: 'user',
+        entityId: userId,
+        userId: req.user.id,
+        details: { username: user.username, newStatus },
+        ipAddress: req.ip
+      });
+
+      res.json({
+        message: newStatus ? 'User activated successfully' : 'User deactivated successfully',
+        isActive: newStatus
+      });
+    } catch (error: any) {
+      console.error('Error toggling user status:', error);
+      res.status(500).json({ error: 'Failed to toggle user status' });
+    }
+  }));
+
   // Apply secure error handler as the last middleware
   app.use(secureErrorHandler);
   

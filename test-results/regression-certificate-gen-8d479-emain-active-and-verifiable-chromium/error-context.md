@@ -1,0 +1,154 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e9]
+          - generic [ref=e11]:
+            - heading "Halal Certification" [level=1] [ref=e12]
+            - paragraph [ref=e13]: Trusted certification authority
+        - navigation [ref=e14]:
+          - link "Home" [ref=e15] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=e16] [cursor=pointer]
+          - link "About" [ref=e17] [cursor=pointer]:
+            - /url: /about
+            - button "About" [ref=e18] [cursor=pointer]
+          - link "Verify" [ref=e19] [cursor=pointer]:
+            - /url: /verify
+            - button "Verify" [ref=e20] [cursor=pointer]
+          - link "Apply" [ref=e21] [cursor=pointer]:
+            - /url: /apply
+            - button "Apply" [ref=e22] [cursor=pointer]
+          - link "Contact" [ref=e23] [cursor=pointer]:
+            - /url: /contact
+            - button "Contact" [ref=e24] [cursor=pointer]
+        - button "Login" [ref=e26] [cursor=pointer]:
+          - img
+          - text: Login
+    - main [ref=e27]:
+      - generic [ref=e28]:
+        - img [ref=e30]
+        - generic [ref=e33]:
+          - heading "Verify Halal Certificate" [level=1] [ref=e34]
+          - paragraph [ref=e35]: Check the authenticity and current status of any Halal certification
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - heading "Verify Certificate" [level=2] [ref=e39]
+          - paragraph [ref=e40]: Enter a certificate number or scan a QR code to verify the authenticity of a Halal certification
+        - generic [ref=e41]:
+          - generic [ref=e43]:
+            - generic [ref=e45]: 
+            - heading "Scan QR Code" [level=3] [ref=e46]
+            - paragraph [ref=e47]: Use your device camera to scan the QR code on the certificate
+            - generic [ref=e48]:
+              - img "QR Code Scanner" [ref=e49]
+              - button " Open Camera" [ref=e50] [cursor=pointer]:
+                - generic [ref=e51] [cursor=pointer]:
+                  - generic [ref=e52] [cursor=pointer]: 
+                  - text: Open Camera
+          - generic [ref=e54]:
+            - generic [ref=e56]: 
+            - heading "Search by Business" [level=3] [ref=e57]
+            - paragraph [ref=e58]: Enter the certificate number or business name to verify certification
+            - generic [ref=e59]:
+              - textbox "Enter certificate number or business name" [ref=e60]: HAL-2025-00010
+              - button "" [ref=e61] [cursor=pointer]:
+                - generic [ref=e62] [cursor=pointer]: 
+            - button "Search" [ref=e63] [cursor=pointer]
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - heading "E2E Test Restaurant Complete Flow" [level=3] [ref=e75]
+              - paragraph [ref=e76]: 456 Halal Street, Sydney, NSW 2000
+            - generic [ref=e77]: Active
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - paragraph [ref=e80]: certificate.certificateNumber
+              - paragraph [ref=e81]: HAL-2025-00010
+            - generic [ref=e82]:
+              - paragraph [ref=e83]: certificate.status
+              - paragraph [ref=e84]: Active
+            - generic [ref=e85]:
+              - paragraph [ref=e86]: Issued Date
+              - paragraph [ref=e87]: Sep 30, 2025
+            - generic [ref=e88]:
+              - paragraph [ref=e89]: Expiry Date
+              - paragraph [ref=e90]: Sep 30, 2026
+          - generic [ref=e91]:
+            - link "certificate.viewDetails" [ref=e92] [cursor=pointer]:
+              - /url: /certificate/HAL-2025-00010
+              - button "certificate.viewDetails" [ref=e93] [cursor=pointer]:
+                - img
+                - text: certificate.viewDetails
+            - button "certificate.submitFeedback" [ref=e94] [cursor=pointer]:
+              - img
+              - text: certificate.submitFeedback
+            - button "certificate.share" [ref=e95] [cursor=pointer]:
+              - img
+              - text: certificate.share
+    - contentinfo [ref=e96]:
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - img [ref=e102]
+              - heading "Halal Certification" [level=3] [ref=e105]
+            - paragraph [ref=e106]: Ensuring authenticity and compliance with Islamic dietary laws
+            - generic [ref=e107]:
+              - button [ref=e108] [cursor=pointer]:
+                - img
+              - button [ref=e109] [cursor=pointer]:
+                - img
+          - generic [ref=e110]:
+            - heading "Quick Links" [level=3] [ref=e111]
+            - list [ref=e112]:
+              - listitem [ref=e113]:
+                - link "Home" [ref=e114] [cursor=pointer]:
+                  - /url: /
+                  - button "Home" [ref=e115] [cursor=pointer]
+              - listitem [ref=e116]:
+                - link "About" [ref=e117] [cursor=pointer]:
+                  - /url: /about
+                  - button "About" [ref=e118] [cursor=pointer]
+              - listitem [ref=e119]:
+                - link "Verify" [ref=e120] [cursor=pointer]:
+                  - /url: /verify
+                  - button "Verify" [ref=e121] [cursor=pointer]
+              - listitem [ref=e122]:
+                - link "Apply" [ref=e123] [cursor=pointer]:
+                  - /url: /apply
+                  - button "Apply" [ref=e124] [cursor=pointer]
+              - listitem [ref=e125]:
+                - link "Contact" [ref=e126] [cursor=pointer]:
+                  - /url: /contact
+                  - button "Contact" [ref=e127] [cursor=pointer]
+          - generic [ref=e128]:
+            - heading "Legal" [level=3] [ref=e129]
+            - list [ref=e130]:
+              - listitem [ref=e131]:
+                - link "Terms of Service" [ref=e132] [cursor=pointer]:
+                  - /url: /terms
+                  - button "Terms of Service" [ref=e133] [cursor=pointer]
+              - listitem [ref=e134]:
+                - link "Privacy Policy" [ref=e135] [cursor=pointer]:
+                  - /url: /privacy
+                  - button "Privacy Policy" [ref=e136] [cursor=pointer]
+          - generic [ref=e137]:
+            - heading "Contact Us" [level=3] [ref=e138]
+            - list [ref=e139]:
+              - listitem [ref=e140]:
+                - generic [ref=e141]:
+                  - text: 123 Certification Ave, Suite 101
+                  - text: New York, NY 10001
+              - listitem [ref=e142]:
+                - generic [ref=e143]: +1 (555) 123-4567
+              - listitem [ref=e144]:
+                - generic [ref=e145]: info@halalcert.org
+        - paragraph [ref=e147]: © 2025 Halal Certification Authority. All rights reserved.
+  - region "Notifications (F8)":
+    - list
+```
