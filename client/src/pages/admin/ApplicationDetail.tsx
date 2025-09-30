@@ -60,16 +60,18 @@ const ApplicationDetail = () => {
   });
 
   // Fetch available inspectors
-  const { data: inspectors } = useQuery({
-    queryKey: ['/api/users/inspectors'],
+  const { data: inspectorsData } = useQuery({
+    queryKey: ['/api/admin/inspectors'],
     queryFn: async () => {
-      const response = await fetch('/api/users?role=inspector', {
+      const response = await fetch('/api/admin/inspectors', {
         credentials: 'include'
       });
-      if (!response.ok) return [];
+      if (!response.ok) return { inspectors: [] };
       return response.json();
     }
   });
+
+  const inspectors = inspectorsData?.inspectors || [];
 
   // Assign inspector mutation
   const assignMutation = useMutation({

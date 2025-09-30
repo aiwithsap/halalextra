@@ -2253,6 +2253,23 @@ Halal Certification Authority`
     }
   }));
 
+  // Admin endpoint to list all inspectors
+  app.get('/api/admin/inspectors', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const inspectors = await db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        createdAt: users.createdAt
+      }).from(users).where(eq(users.role, 'inspector'));
+
+      res.json({ inspectors });
+    } catch (error: any) {
+      console.error('Error fetching inspectors:', error);
+      res.status(500).json({ error: 'Failed to fetch inspectors' });
+    }
+  }));
+
   // Admin endpoint to assign inspector to application
   app.post('/api/admin/applications/:id/assign', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
     try {
@@ -2300,6 +2317,103 @@ Halal Certification Authority`
     } catch (error: any) {
       console.error('Error assigning inspector:', error);
       res.status(500).json({ error: 'Failed to assign inspector' });
+    }
+  }));
+
+  // Admin endpoint to list all certificates with pagination
+  app.get('/api/admin/certificates', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const status = req.query.status as string;
+      const search = req.query.search as string;
+
+      const offset = (page - 1) * limit;
+
+      let query = db.select({
+        id: certificates.id,
+        certificateNumber: certificates.certificateNumber,
+        status: certificates.status,
+        issuedDate: certificates.issuedDate,
+        expiryDate: certificates.expiryDate,
+        qrCodeUrl: certificates.qrCodeUrl,
+        storeName: stores.name,
+        storeAddress: stores.address,
+        storeCity: stores.city,
+        storeState: stores.state
+      })
+      .from(certificates)
+      .leftJoin(stores, eq(certificates.storeId, stores.id))
+      .limit(limit)
+      .offset(offset);
+
+      // Add filters if provided
+      if (status) {
+        query = query.where(eq(certificates.status, status));
+      }
+
+      const results = await query;
+
+      // Filter by search term if provided (in-memory filtering for simplicity)
+      let filteredResults = results;
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredResults = results.filter(cert =>
+          cert.certificateNumber?.toLowerCase().includes(searchLower) ||
+          cert.storeName?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      res.json({
+        certificates: filteredResults,
+        page,
+        limit,
+        total: filteredResults.length
+      });
+    } catch (error: any) {
+      console.error('Error fetching certificates:', error);
+      res.status(500).json({ error: 'Failed to fetch certificates' });
+    }
+  }));
+
+  // Admin endpoint to revoke a certificate
+  app.patch('/api/admin/certificates/:id/revoke', authMiddleware, requireRole(['admin']), asyncHandler(async (req, res) => {
+    try {
+      const certificateId = parseInt(req.params.id);
+      const { reason } = req.body;
+
+      const [certificate] = await db.select().from(certificates).where(eq(certificates.id, certificateId)).limit(1);
+
+      if (!certificate) {
+        return res.status(404).json({ error: 'Certificate not found' });
+      }
+
+      if (certificate.status === 'revoked') {
+        return res.status(400).json({ error: 'Certificate is already revoked' });
+      }
+
+      await db.update(certificates)
+        .set({ status: 'revoked' })
+        .where(eq(certificates.id, certificateId));
+
+      // Create audit log
+      await storage.createAuditLog({
+        action: 'certificate_revoked',
+        entity: 'certificate',
+        entityId: certificateId,
+        userId: req.user.id,
+        details: { reason: reason || 'No reason provided', certificateNumber: certificate.certificateNumber },
+        ipAddress: req.ip
+      });
+
+      res.json({
+        message: 'Certificate revoked successfully',
+        certificateId,
+        certificateNumber: certificate.certificateNumber
+      });
+    } catch (error: any) {
+      console.error('Error revoking certificate:', error);
+      res.status(500).json({ error: 'Failed to revoke certificate' });
     }
   }));
 

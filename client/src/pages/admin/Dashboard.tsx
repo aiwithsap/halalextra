@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { adminApi, queryKeys, handleApiError } from "@/services/api";
 import ApplicationQueue from "@/components/dashboard/ApplicationQueue";
+import CertificateList from "@/components/dashboard/CertificateList";
 import {
   Card,
   CardContent,
@@ -439,17 +440,7 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="certificates">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("dashboard.admin.certificates.title")}</CardTitle>
-                <CardDescription>{t("dashboard.admin.certificates.description")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <p className="text-gray-500">{t("dashboard.admin.certificates.comingSoon")}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <CertificateList />
           </TabsContent>
 
           <TabsContent value="users">

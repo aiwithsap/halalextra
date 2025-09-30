@@ -9,6 +9,8 @@ The project facilitates the process of granting halal certification to retail st
 *** Basic Process Flow:***
 Vendor to fill out the request form for halal certification of his store. Then an inspector working for the app will visit the store and upload pictures as he inspects. Inspector will approve the request and the app will provide a QR code. This QR code will direct to a page on the website showing if the certifiation is valid or not. 
 
+There is also a feedback mechanism whereby someone can anonymously provide feedback about a shop that has been granted our halal certification. However this feedback needs to be approved by an admin to make it visible against that shop or customer. 
+
 ### ✅ Core Features (IMPLEMENTED)
 1. **Store Application Process**: Multi-step form for store owners to request halal certification with document upload and Stripe payment integration
 2. **Inspector Workflow**: Complete inspector dashboard with assigned applications, inspection forms, and photo upload capability
