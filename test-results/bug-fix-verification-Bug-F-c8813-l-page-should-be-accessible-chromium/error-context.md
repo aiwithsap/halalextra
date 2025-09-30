@@ -1,0 +1,110 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e9]
+          - generic [ref=e11]:
+            - heading "Halal Certification" [level=1] [ref=e12]
+            - paragraph [ref=e13]: Trusted certification authority
+        - navigation [ref=e14]:
+          - link "Home" [ref=e15] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=e16] [cursor=pointer]
+          - link "About" [ref=e17] [cursor=pointer]:
+            - /url: /about
+            - button "About" [ref=e18] [cursor=pointer]
+          - link "Verify" [ref=e19] [cursor=pointer]:
+            - /url: /verify
+            - button "Verify" [ref=e20] [cursor=pointer]
+          - link "Apply" [ref=e21] [cursor=pointer]:
+            - /url: /apply
+            - button "Apply" [ref=e22] [cursor=pointer]
+          - link "Contact" [ref=e23] [cursor=pointer]:
+            - /url: /contact
+            - button "Contact" [ref=e24] [cursor=pointer]
+        - button "Login" [active] [ref=e26] [cursor=pointer]:
+          - img
+          - text: Login
+    - main [ref=e27]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Login
+          - generic [ref=e32]: Enter your credentials to access your account
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e36]: Username
+            - generic [ref=e37]:
+              - img [ref=e38]
+              - textbox "Enter your username" [ref=e41]: adeelh
+          - generic [ref=e42]:
+            - generic [ref=e43]: Password
+            - generic [ref=e44]:
+              - img [ref=e45]
+              - textbox "Enter your password" [ref=e49]: 1P9Zqz7DIoKIqJx
+          - button "Login" [ref=e50] [cursor=pointer]
+    - contentinfo [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]:
+              - img [ref=e58]
+              - heading "Halal Certification" [level=3] [ref=e61]
+            - paragraph [ref=e62]: Ensuring authenticity and compliance with Islamic dietary laws
+            - generic [ref=e63]:
+              - button [ref=e64] [cursor=pointer]:
+                - img
+              - button [ref=e65] [cursor=pointer]:
+                - img
+          - generic [ref=e66]:
+            - heading "Quick Links" [level=3] [ref=e67]
+            - list [ref=e68]:
+              - listitem [ref=e69]:
+                - link "Home" [ref=e70] [cursor=pointer]:
+                  - /url: /
+                  - button "Home" [ref=e71] [cursor=pointer]
+              - listitem [ref=e72]:
+                - link "About" [ref=e73] [cursor=pointer]:
+                  - /url: /about
+                  - button "About" [ref=e74] [cursor=pointer]
+              - listitem [ref=e75]:
+                - link "Verify" [ref=e76] [cursor=pointer]:
+                  - /url: /verify
+                  - button "Verify" [ref=e77] [cursor=pointer]
+              - listitem [ref=e78]:
+                - link "Apply" [ref=e79] [cursor=pointer]:
+                  - /url: /apply
+                  - button "Apply" [ref=e80] [cursor=pointer]
+              - listitem [ref=e81]:
+                - link "Contact" [ref=e82] [cursor=pointer]:
+                  - /url: /contact
+                  - button "Contact" [ref=e83] [cursor=pointer]
+          - generic [ref=e84]:
+            - heading "Legal" [level=3] [ref=e85]
+            - list [ref=e86]:
+              - listitem [ref=e87]:
+                - link "Terms of Service" [ref=e88] [cursor=pointer]:
+                  - /url: /terms
+                  - button "Terms of Service" [ref=e89] [cursor=pointer]
+              - listitem [ref=e90]:
+                - link "Privacy Policy" [ref=e91] [cursor=pointer]:
+                  - /url: /privacy
+                  - button "Privacy Policy" [ref=e92] [cursor=pointer]
+          - generic [ref=e93]:
+            - heading "Contact Us" [level=3] [ref=e94]
+            - list [ref=e95]:
+              - listitem [ref=e96]:
+                - generic [ref=e97]:
+                  - text: 123 Certification Ave, Suite 101
+                  - text: New York, NY 10001
+              - listitem [ref=e98]:
+                - generic [ref=e99]: +1 (555) 123-4567
+              - listitem [ref=e100]:
+                - generic [ref=e101]: info@halalcert.org
+        - paragraph [ref=e103]: © 2025 Halal Certification Authority. All rights reserved.
+  - region "Notifications (F8)":
+    - list
+```

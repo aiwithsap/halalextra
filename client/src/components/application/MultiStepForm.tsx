@@ -272,9 +272,10 @@ const MultiStepForm = () => {
         </div>
         
         <div className={`step ${currentStep === 5 ? 'active' : ''}`}>
-          <PaymentForm 
-            formData={formData} 
+          <PaymentForm
+            formData={formData}
             prevStep={prevStep}
+            isSubmitting={isSubmitting}
             onPaymentSuccess={(paymentIntentId: string) => {
               updateFormData({ paymentIntentId });
               handleSubmit(paymentIntentId);

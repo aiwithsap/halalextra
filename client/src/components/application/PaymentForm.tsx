@@ -14,10 +14,11 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 interface PaymentFormProps {
   formData: ApplicationFormData;
   prevStep: () => void;
+  isSubmitting?: boolean;
   onPaymentSuccess: (paymentIntentId: string) => void;
 }
 
-const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFormProps) => {
+const PaymentFormContent = ({ formData, prevStep, isSubmitting, onPaymentSuccess }: PaymentFormProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const stripe = useStripe();
@@ -250,21 +251,21 @@ const PaymentFormContent = ({ formData, prevStep, onPaymentSuccess }: PaymentFor
                 type="button"
                 variant="outline"
                 onClick={prevStep}
-                disabled={isProcessing}
+                disabled={isProcessing || isSubmitting}
                 className="flex-1"
               >
                 {t("common.back")}
               </Button>
-              
+
               <Button
                 type="submit"
-                disabled={(!demoMode && !stripe) || isProcessing || !clientSecret}
+                disabled={(!demoMode && !stripe) || isProcessing || isSubmitting || !clientSecret}
                 className="flex-1"
               >
-                {isProcessing ? (
+                {(isProcessing || isSubmitting) ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("payment.processing")}
+                    {isSubmitting ? t("apply.submitting") : t("payment.processing")}
                   </>
                 ) : (
                   <>
