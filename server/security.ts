@@ -42,14 +42,15 @@ const SECURITY_CONFIG = {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB
     allowedMimeTypes: [
       'application/pdf',
+      'text/plain', // Added for .txt files - BUG FIX #1
       'image/jpeg',
-      'image/jpg', 
+      'image/jpg',
       'image/png',
       'image/webp',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ],
-    allowedExtensions: ['.pdf', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx']
+    allowedExtensions: ['.pdf', '.txt', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx'] // Added .txt - BUG FIX #1
   }
 };
 

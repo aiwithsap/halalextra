@@ -23,9 +23,46 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
   const isRtl = document.documentElement.dir === "rtl";
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Client-side file validation - BUG FIX #1
+  const validateFile = (file: File): { valid: boolean; error?: string } => {
+    const allowedExtensions = ['.pdf', '.txt', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+
+    if (!allowedExtensions.includes(extension)) {
+      return {
+        valid: false,
+        error: `File type not allowed. Accepted: PDF, TXT, JPG, PNG, DOC, DOCX`
+      };
+    }
+
+    if (file.size > maxSize) {
+      return {
+        valid: false,
+        error: `File too large. Maximum size: ${maxSize / 1024 / 1024}MB`
+      };
+    }
+
+    return { valid: true };
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof ApplicationFormData) => {
     if (e.target.files && e.target.files[0]) {
-      updateFormData({ [field]: e.target.files[0] });
+      const file = e.target.files[0];
+      const validation = validateFile(file);
+
+      if (!validation.valid) {
+        setErrors({ ...errors, [field]: validation.error || 'Invalid file' });
+        return;
+      }
+
+      // Clear any previous errors for this field
+      const newErrors = { ...errors };
+      delete newErrors[field];
+      setErrors(newErrors);
+
+      updateFormData({ [field]: file });
     }
   };
 
@@ -75,9 +112,21 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
       e.stopPropagation();
       const dropzone = e.currentTarget;
       dropzone.classList.remove('border-primary', 'bg-primary/5');
-      
+
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const droppedFile = e.dataTransfer.files[0];
+        const validation = validateFile(droppedFile);
+
+        if (!validation.valid) {
+          setErrors({ ...errors, [field]: validation.error || 'Invalid file' });
+          return;
+        }
+
+        // Clear any previous errors for this field
+        const newErrors = { ...errors };
+        delete newErrors[field];
+        setErrors(newErrors);
+
         updateFormData({ [field]: droppedFile });
       }
     };
@@ -132,8 +181,11 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
                 id={field.toString()}
                 className="hidden"
                 onChange={(e) => handleFileChange(e, field)}
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                accept=".pdf,.txt,.jpg,.jpeg,.png,.webp,.doc,.docx"
               />
+              <p className="text-xs text-gray-500 mt-2">
+                Accepted formats: PDF, TXT, JPG, PNG, WEBP, DOC, DOCX (Max 10MB)
+              </p>
               <Button 
                 type="button" 
                 variant="outline"

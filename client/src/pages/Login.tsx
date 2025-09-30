@@ -164,10 +164,13 @@ export default function Login() {
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
-          <div className="text-center text-sm text-gray-500">
-            <p>For testing:</p>
-            <p>Admin: username <span className="font-mono">adeelh</span> / password <span className="font-mono">1P9Zqz7DIoKIqJx</span></p>
-          </div>
+          {/* SECURITY FIX: Only show test credentials in development mode */}
+          {import.meta.env.DEV && (
+            <div className="text-center text-sm text-gray-500">
+              <p>For testing:</p>
+              <p>Admin: username <span className="font-mono">adeelh</span> / password <span className="font-mono">1P9Zqz7DIoKIqJx</span></p>
+            </div>
+          )}
         </CardFooter>
       </Card>
     </div>

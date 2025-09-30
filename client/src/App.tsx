@@ -21,6 +21,7 @@ import ApplicationDetail from "./pages/inspector/ApplicationDetail";
 import AdminDashboard from "./pages/admin/Dashboard";
 import FeedbackModeration from "./pages/admin/FeedbackModeration";
 import Applications from "./pages/admin/Applications";
+import AdminApplicationDetail from "./pages/admin/ApplicationDetail"; // BUG FIX #2
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { useEffect, useState } from "react";
@@ -83,6 +84,10 @@ function AppRouter() {
       </Route>
       <Route path="/admin/feedback">
         <ProtectedRoute component={FeedbackModeration} roles={['admin']} />
+      </Route>
+      {/* BUG FIX #2: Add missing admin application detail route */}
+      <Route path="/admin/application/:id">
+        <ProtectedRoute component={AdminApplicationDetail} roles={['admin']} />
       </Route>
 
       {/* Inspector Routes */}

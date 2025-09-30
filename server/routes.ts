@@ -109,7 +109,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     // Use security validation
     const validation = validateFile(file);
-    
+
     if (!validation.isValid) {
       logger.warn('File upload validation failed', {
         filename: file.originalname,
@@ -118,9 +118,13 @@ const upload = multer({
         errors: validation.errors,
         ip: req.ip
       });
-      return cb(new Error(validation.errors[0]), false);
+      // BUG FIX #1: Create a custom error with proper status code
+      const error: any = new Error(validation.errors[0]);
+      error.status = 400;
+      error.code = 'FILE_VALIDATION_FAILED';
+      return cb(error, false);
     }
-    
+
     cb(null, true);
   }
 });
@@ -878,7 +882,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error('Application submission error:', error);
-      res.status(400).json({ message: error.message || 'Invalid application data' });
+
+      // BUG FIX #1: User-friendly error messages with proper status codes
+      const userMessage = error.code === 'FILE_VALIDATION_FAILED'
+        ? 'One or more files are invalid. Please check the file types and try again.'
+        : error.code === 'LIMIT_FILE_SIZE'
+        ? 'One or more files exceed the 10MB size limit.'
+        : 'There was an error processing your application. Please try again.';
+
+      res.status(error.status || 400).json({
+        message: userMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   }));
   
