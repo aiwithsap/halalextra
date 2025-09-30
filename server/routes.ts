@@ -1387,18 +1387,18 @@ Please ensure that you or an authorized representative is present during the ins
     try {
       const id = parseInt(req.params.id);
       const { status, notes } = req.body;
-      
+
       if (!['approved', 'rejected'].includes(status)) {
         return res.status(400).json({ message: 'Invalid status value' });
       }
-      
+
       const application = await storage.getApplication(id);
       if (!application) {
         return res.status(404).json({ message: 'Application not found' });
       }
-      
+
       const updatedApplication = await storage.updateApplicationStatus(id, status, notes);
-      
+
       // Create audit log
       await storage.createAuditLog({
         action: `application_${status}`,
@@ -1408,28 +1408,54 @@ Please ensure that you or an authorized representative is present during the ins
         details: { notes, previousStatus: application.status },
         ipAddress: req.ip
       });
-      
+
       // If approved, create a certificate
+      let certificate = null;
       if (status === 'approved') {
-        const now = new Date();
-        const oneYearLater = new Date(now);
-        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-        
-        const certificateNumber = `HAL-${new Date().getFullYear()}-${id.toString().padStart(5, '0')}`;
-        const qrCodeUrl = await generateQRCode(`${process.env.CLIENT_URL || 'http://localhost:3000'}/verify/${certificateNumber}`);
-        
-        await storage.createCertificate({
-          storeId: application.storeId,
-          applicationId: application.id,
-          status: 'active',
-          certificateNumber,
-          issuedBy: req.user.id,
-          issuedDate: now,
-          expiryDate: oneYearLater,
-          qrCodeUrl
-        });
+        try {
+          console.log(`[CERT] Starting certificate creation for Application ID ${id}`);
+          console.log(`[CERT] Application storeId: ${application.storeId}, applicationId: ${application.id}`);
+
+          const now = new Date();
+          const oneYearLater = new Date(now);
+          oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+          const certificateNumber = `HAL-${new Date().getFullYear()}-${id.toString().padStart(5, '0')}`;
+          console.log(`[CERT] Generated certificate number: ${certificateNumber}`);
+
+          const qrCodeUrl = await generateQRCode(`${process.env.CLIENT_URL || 'http://localhost:3000'}/verify/${certificateNumber}`);
+          console.log(`[CERT] Generated QR code URL: ${qrCodeUrl.substring(0, 50)}...`);
+
+          certificate = await storage.createCertificate({
+            storeId: application.storeId,
+            applicationId: application.id,
+            status: 'active',
+            certificateNumber,
+            issuedBy: req.user.id,
+            issuedDate: now,
+            expiryDate: oneYearLater,
+            qrCodeUrl
+          });
+
+          console.log(`[CERT] Certificate created successfully with ID: ${certificate.id}`);
+        } catch (certError: any) {
+          console.error('[CERT] CRITICAL: Certificate creation failed:', {
+            error: certError.message,
+            stack: certError.stack,
+            applicationId: id,
+            storeId: application.storeId
+          });
+
+          // Don't fail the whole request, but log the error clearly
+          // and include it in the response for admin awareness
+          return res.status(207).json({
+            ...updatedApplication,
+            warning: 'Application approved but certificate generation failed. Please create certificate manually.',
+            certificateError: certError.message
+          });
+        }
       }
-      
+
       // Send email notification
       const store = await storage.getStore(application.storeId);
       if (store) {
@@ -1443,11 +1469,17 @@ Please ensure that you or an authorized representative is present during the ins
           console.error('Failed to send email notification:', error);
         }
       }
-      
-      res.json(updatedApplication);
-    } catch (error) {
+
+      res.json({
+        ...updatedApplication,
+        certificate: certificate || undefined
+      });
+    } catch (error: any) {
       console.error('Error updating application status:', error);
-      res.status(500).json({ message: 'An error occurred while updating application status' });
+      res.status(500).json({
+        message: 'An error occurred while updating application status',
+        error: error.message
+      });
     }
   }));
   
