@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,9 +35,11 @@ const ApplicationDetail = () => {
   const [notes, setNotes] = useState("");
   const [decision, setDecision] = useState<"approved" | "rejected" | "">("");
 
-  // Get tab from URL query params
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const activeTab = urlParams.get('tab') || 'details';
+  // Get tab from URL query params - use useMemo to ensure proper re-rendering
+  const activeTab = useMemo(() => {
+    const urlParams = new URLSearchParams(location.split('?')[1] || '');
+    return urlParams.get('tab') || 'details';
+  }, [location]);
 
   // Fetch application details
   const { data, isLoading, error } = useQuery({
@@ -169,7 +171,7 @@ const ApplicationDetail = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(tab) => setLocation(`/admin/application/${applicationId}?tab=${tab}`)}>
+      <Tabs key={activeTab} value={activeTab} onValueChange={(tab) => setLocation(`/admin/application/${applicationId}?tab=${tab}`)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
